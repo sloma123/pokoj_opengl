@@ -16,10 +16,14 @@ first_mouse = True
 speed = 0.1
 sensitivity = 0.2
 
-# Komoda - pozycja i stan
-komoda_pos = np.array([1.0, -0.5, 1.0])
-komoda_size = 1.0
-dragging = False
+# Lista obiektów do rysowania i przesuwania
+obiekty = [
+    {"nazwa": "komoda", "pos": np.array([1.0, -0.5, 1.0]), "size": 1.0, "color": (0.6, 0.3, 0.2), "typ": "model"},
+    {"nazwa": "stol",   "pos": np.array([0.0, -0.3, 0.0]), "size": 1.5, "color": (0.4, 0.2, 0.1), "typ": "cube"},
+    {"nazwa": "tv",     "pos": np.array([-2.0, 0.0, -3.0]), "size": 1.0, "color": (0.0, 0.0, 0.0), "typ": "cube"}
+]
+
+selected_obj = None
 
 def init():
     glEnable(GL_DEPTH_TEST)
@@ -61,12 +65,14 @@ def draw_room():
         glPopMatrix()
 
 def draw_furniture():
-    draw_cube(0, -0.3, 0, 1.5, (0.4, 0.2, 0.1))
-    draw_cube(-2, 0.0, -3, 1.0, (0.0, 0.0, 0.0))
-    glPushMatrix()
-    glTranslatef(*komoda_pos)
-    draw_komoda()
-    glPopMatrix()
+    for obj in obiekty:
+        glPushMatrix()
+        glTranslatef(*obj["pos"])
+        if obj["typ"] == "cube":
+            draw_cube(0, 0, 0, obj["size"], obj["color"])
+        elif obj["typ"] == "model" and obj["nazwa"] == "komoda":
+            draw_komoda()
+        glPopMatrix()
 
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -120,22 +126,25 @@ def ray_hits_box(ray_origin, ray_dir, box_center, box_size):
     return True
 
 def mouse_click(button, state, x, y):
-    global dragging
+    global selected_obj
+    from OpenGL.GLUT import GLUT_LEFT_BUTTON, GLUT_DOWN, GLUT_UP
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
         ray_origin, ray_dir = get_ray_from_mouse(x, y)
-        if ray_hits_box(ray_origin, ray_dir, komoda_pos, komoda_size):
-            dragging = True
+        for obj in obiekty:
+            if ray_hits_box(ray_origin, ray_dir, obj["pos"], obj["size"]):
+                selected_obj = obj
+                break
     elif button == GLUT_LEFT_BUTTON and state == GLUT_UP:
-        dragging = False
+        selected_obj = None
 
 def mouse_drag(x, y):
-    global komoda_pos
-    if dragging:
+    global selected_obj
+    if selected_obj is not None:
         ray_origin, ray_dir = get_ray_from_mouse(x, y)
-        t = (komoda_pos[1] - ray_origin[1]) / ray_dir[1]
+        t = (selected_obj["pos"][1] - ray_origin[1]) / ray_dir[1]
         point_on_plane = ray_origin + t * ray_dir
-        komoda_pos[0] = point_on_plane[0]
-        komoda_pos[2] = point_on_plane[2]
+        selected_obj["pos"][0] = point_on_plane[0]
+        selected_obj["pos"][2] = point_on_plane[2]
 
 def timer(v):
     update_camera()
@@ -175,7 +184,7 @@ def main():
     glutInit()
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(800, 600)
-    glutCreateWindow("3D Pokoj z komoda (WASD + mysz)".encode("ascii"))
+    glutCreateWindow(b"3D Pokoj z obiektami")
     init()
     glutDisplayFunc(display)
     glutKeyboardFunc(key_down)
