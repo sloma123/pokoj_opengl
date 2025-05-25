@@ -1,27 +1,25 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-from load_objects import *
 import numpy as np
 import sys
-import pygame
-import pywavefront
-import pygame
-from pygame.locals import *
-import pywavefront
+from komoda import draw_komoda
 
-# Pozycja i orientacja kamery
+# Kamera
 camera_pos = np.array([0.0, 1.0, 5.0])
 camera_front = np.array([0.0, 0.0, -1.0])
 camera_up = np.array([0.0, 1.0, 0.0])
 yaw, pitch = -90.0, 0.0
-
-# Sterowanie
 keys = set()
 last_x, last_y = 400, 300
 first_mouse = True
 speed = 0.1
 sensitivity = 0.2
+
+# Komoda - pozycja i stan
+komoda_pos = np.array([1.0, -0.5, 1.0])
+komoda_size = 1.0
+dragging = False
 
 def init():
     glEnable(GL_DEPTH_TEST)
@@ -38,7 +36,6 @@ def draw_cube(x, y, z, size, color):
     glPopMatrix()
 
 def draw_room():
-    # Podłoga
     glColor3f(0.6, 0.4, 0.2)
     glPushMatrix()
     glTranslatef(0, -1, 0)
@@ -46,7 +43,6 @@ def draw_room():
     glutSolidCube(1)
     glPopMatrix()
 
-    # Sufit
     glColor3f(0.9, 0.9, 0.9)
     glPushMatrix()
     glTranslatef(0, 2.5, 0)
@@ -54,7 +50,6 @@ def draw_room():
     glutSolidCube(1)
     glPopMatrix()
 
-    # Ściany
     wall_color = (0.8, 0.8, 0.9)
     for pos, scale in [((-5, 0.75, 0), (0.1, 3, 10)), ((5, 0.75, 0), (0.1, 3, 10)),
                        ((0, 0.75, -5), (10, 3, 0.1)), ((0, 0.75, 5), (10, 3, 0.1))]:
@@ -66,21 +61,21 @@ def draw_room():
         glPopMatrix()
 
 def draw_furniture():
-    draw_cube(0, -0.3, 0, 1.5, (0.4, 0.2, 0.1))  # Stół
-    draw_cube(2, -0.5, 2, 1.0, (0.6, 0.3, 0.2))  # Szafka
-    draw_cube(-2, 0.0, -3, 1.0, (0.0, 0.0, 0.0))  # Telewizor
+    draw_cube(0, -0.3, 0, 1.5, (0.4, 0.2, 0.1))
+    draw_cube(-2, 0.0, -3, 1.0, (0.0, 0.0, 0.0))
+    glPushMatrix()
+    glTranslatef(*komoda_pos)
+    draw_komoda()
+    glPopMatrix()
 
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
-
     center = camera_pos + camera_front
     gluLookAt(*camera_pos, *center, *camera_up)
-
     draw_room()
     draw_furniture()
-
     glutSwapBuffers()
 
 def update_camera():
@@ -88,15 +83,59 @@ def update_camera():
     front = camera_front / np.linalg.norm(camera_front)
     right = np.cross(front, camera_up)
     right /= np.linalg.norm(right)
+    if b'w' in keys: camera_pos += front * speed
+    if b's' in keys: camera_pos -= front * speed
+    if b'a' in keys: camera_pos -= right * speed
+    if b'd' in keys: camera_pos += right * speed
 
-    if b'w' in keys:
-        camera_pos[:] += front * speed
-    if b's' in keys:
-        camera_pos[:] -= front * speed
-    if b'a' in keys:
-        camera_pos[:] -= right * speed
-    if b'd' in keys:
-        camera_pos[:] += right * speed
+def get_ray_from_mouse(x, y):
+    viewport = glGetIntegerv(GL_VIEWPORT)
+    modelview = glGetDoublev(GL_MODELVIEW_MATRIX)
+    projection = glGetDoublev(GL_PROJECTION_MATRIX)
+    win_x = x
+    win_y = viewport[3] - y
+    near_point = gluUnProject(win_x, win_y, 0.0, modelview, projection, viewport)
+    far_point = gluUnProject(win_x, win_y, 1.0, modelview, projection, viewport)
+    ray_origin = np.array(near_point)
+    ray_dir = np.array(far_point) - ray_origin
+    ray_dir /= np.linalg.norm(ray_dir)
+    return ray_origin, ray_dir
+
+def ray_hits_box(ray_origin, ray_dir, box_center, box_size):
+    t_min = -np.inf
+    t_max = np.inf
+    bounds_min = box_center - box_size / 2
+    bounds_max = box_center + box_size / 2
+    for i in range(3):
+        if abs(ray_dir[i]) < 1e-8:
+            if ray_origin[i] < bounds_min[i] or ray_origin[i] > bounds_max[i]:
+                return False
+        else:
+            t1 = (bounds_min[i] - ray_origin[i]) / ray_dir[i]
+            t2 = (bounds_max[i] - ray_origin[i]) / ray_dir[i]
+            t_min = max(t_min, min(t1, t2))
+            t_max = min(t_max, max(t1, t2))
+            if t_max < t_min:
+                return False
+    return True
+
+def mouse_click(button, state, x, y):
+    global dragging
+    if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
+        ray_origin, ray_dir = get_ray_from_mouse(x, y)
+        if ray_hits_box(ray_origin, ray_dir, komoda_pos, komoda_size):
+            dragging = True
+    elif button == GLUT_LEFT_BUTTON and state == GLUT_UP:
+        dragging = False
+
+def mouse_drag(x, y):
+    global komoda_pos
+    if dragging:
+        ray_origin, ray_dir = get_ray_from_mouse(x, y)
+        t = (komoda_pos[1] - ray_origin[1]) / ray_dir[1]
+        point_on_plane = ray_origin + t * ray_dir
+        komoda_pos[0] = point_on_plane[0]
+        komoda_pos[2] = point_on_plane[2]
 
 def timer(v):
     update_camera()
@@ -105,33 +144,26 @@ def timer(v):
 
 def key_down(key, x, y):
     keys.add(key)
-    if key == b'\x1b':  # ESC
-        sys.exit()
+    if key == b'\x1b': sys.exit()
 
 def key_up(key, x, y):
     keys.discard(key)
 
 def mouse_motion(x, y):
     global yaw, pitch, camera_front, last_x, last_y, first_mouse
-
     if first_mouse:
         last_x, last_y = x, y
         first_mouse = False
-
     dx = x - last_x
     dy = last_y - y
     last_x, last_y = x, y
-
     dx *= sensitivity
     dy *= sensitivity
-
     yaw += dx
     pitch += dy
     pitch = max(-89.0, min(89.0, pitch))
-
     rad_yaw = np.radians(yaw)
     rad_pitch = np.radians(pitch)
-
     front = np.array([
         np.cos(rad_yaw) * np.cos(rad_pitch),
         np.sin(rad_pitch),
@@ -143,15 +175,15 @@ def main():
     glutInit()
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(800, 600)
-    glutCreateWindow(b"3D Pokoj z ruchem FPS (WASD + mysz)")
+    glutCreateWindow("3D Pokoj z komoda (WASD + mysz)".encode("ascii"))
     init()
-
     glutDisplayFunc(display)
     glutKeyboardFunc(key_down)
     glutKeyboardUpFunc(key_up)
     glutPassiveMotionFunc(mouse_motion)
+    glutMouseFunc(mouse_click)
+    glutMotionFunc(mouse_drag)
     glutTimerFunc(0, timer, 0)
-
     glutMainLoop()
 
 if __name__ == "__main__":
