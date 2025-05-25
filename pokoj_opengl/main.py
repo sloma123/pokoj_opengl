@@ -16,11 +16,11 @@ first_mouse = True
 speed = 0.1
 sensitivity = 0.2
 
-# Lista obiektów do rysowania i przesuwania
+# Lista obiektów z pozycją, rozmiarem, kolorem i rotacją
 obiekty = [
-    {"nazwa": "komoda", "pos": np.array([1.0, -0.5, 1.0]), "size": 1.0, "color": (0.6, 0.3, 0.2), "typ": "model"},
-    {"nazwa": "stol",   "pos": np.array([0.0, -0.3, 0.0]), "size": 1.5, "color": (0.4, 0.2, 0.1), "typ": "cube"},
-    {"nazwa": "tv",     "pos": np.array([-2.0, 0.0, -3.0]), "size": 1.0, "color": (0.0, 0.0, 0.0), "typ": "cube"}
+    {"nazwa": "komoda", "pos": np.array([1.0, -0.5, 1.0]), "size": 1.0, "color": (0.6, 0.3, 0.2), "typ": "model", "rot": 0},
+    {"nazwa": "stol",   "pos": np.array([0.0, -0.3, 0.0]), "size": 1.5, "color": (0.4, 0.2, 0.1), "typ": "cube", "rot": 0},
+    {"nazwa": "tv",     "pos": np.array([-2.0, 0.0, -3.0]), "size": 1.0, "color": (0.0, 0.0, 0.0), "typ": "cube", "rot": 0}
 ]
 
 selected_obj = None
@@ -68,6 +68,7 @@ def draw_furniture():
     for obj in obiekty:
         glPushMatrix()
         glTranslatef(*obj["pos"])
+        glRotatef(obj.get("rot", 0), 0, 1, 0)  # obrót wokół osi Y
         if obj["typ"] == "cube":
             draw_cube(0, 0, 0, obj["size"], obj["color"])
         elif obj["typ"] == "model" and obj["nazwa"] == "komoda":
@@ -127,7 +128,6 @@ def ray_hits_box(ray_origin, ray_dir, box_center, box_size):
 
 def mouse_click(button, state, x, y):
     global selected_obj
-    from OpenGL.GLUT import GLUT_LEFT_BUTTON, GLUT_DOWN, GLUT_UP
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
         ray_origin, ray_dir = get_ray_from_mouse(x, y)
         for obj in obiekty:
@@ -145,6 +145,14 @@ def mouse_drag(x, y):
         point_on_plane = ray_origin + t * ray_dir
         selected_obj["pos"][0] = point_on_plane[0]
         selected_obj["pos"][2] = point_on_plane[2]
+
+def special_input(key, x, y):
+    global selected_obj
+    if selected_obj:
+        if key == GLUT_KEY_LEFT:
+            selected_obj["rot"] = (selected_obj["rot"] - 10) % 360
+        elif key == GLUT_KEY_RIGHT:
+            selected_obj["rot"] = (selected_obj["rot"] + 10) % 360
 
 def timer(v):
     update_camera()
@@ -192,6 +200,7 @@ def main():
     glutPassiveMotionFunc(mouse_motion)
     glutMouseFunc(mouse_click)
     glutMotionFunc(mouse_drag)
+    glutSpecialFunc(special_input)  # ⬅️ obsługa strzałek
     glutTimerFunc(0, timer, 0)
     glutMainLoop()
 
