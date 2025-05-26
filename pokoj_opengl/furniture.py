@@ -1,7 +1,6 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 import numpy as np
-#from komoda import draw_komoda
 
 class Furniture:
     def __init__(self, name, pos, size, color, rotation=0):
@@ -10,16 +9,31 @@ class Furniture:
         self.size = size
         self.color = color
         self.rotation = rotation
+        self.is_selected = False
 
     def draw(self):
         glPushMatrix()
         glTranslatef(*self.pos)
         glRotatef(self.rotation, 0, 1, 0)
+
+        # Rysowanie bryły
         self.draw_geometry()
+
+        # Podświetlenie zaznaczenia
+        if self.is_selected:
+            glPushAttrib(GL_ENABLE_BIT)
+            glDisable(GL_LIGHTING)
+            glColor3f(1.0, 0.0, 0.0)  # czerwony
+            glLineWidth(3.0)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+            glScalef(self.size * 1.01, self.size * 1.01, self.size * 1.01)
+            glutWireCube(1.0)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+            glPopAttrib()
+
         glPopMatrix()
 
     def draw_geometry(self):
-        # domyślny sześcian
         glPushMatrix()
         glScalef(self.size, self.size, self.size)
         glColor3f(*self.color)
@@ -46,8 +60,7 @@ class Furniture:
 
 class Komoda(Furniture):
     def __init__(self, pos):
-        super().__init__("komoda", pos, 1.0, (0.2, 0.4, 0.8))  # niebieska komoda
-
+        super().__init__("komoda", pos, 1.0, (0.2, 0.4, 0.8))
 
 class Stol(Furniture):
     def __init__(self, pos):

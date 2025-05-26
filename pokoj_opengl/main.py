@@ -25,7 +25,7 @@ obiekty = [
 ]
 
 selected_obj = None
-dragging = False  # czy trwa przeciąganie
+dragging = False
 
 def init():
     glEnable(GL_DEPTH_TEST)
@@ -60,6 +60,7 @@ def draw_room():
 
 def draw_furniture():
     for obj in obiekty:
+        obj.is_selected = (obj == selected_obj)
         obj.draw()
 
 def display():
@@ -119,7 +120,7 @@ def mouse_click(button, state, x, y):
                     break
             if hit_obj is not None:
                 if selected_obj == hit_obj:
-                    selected_obj = None  # klik drugi raz = odznacz
+                    selected_obj = None
                 else:
                     selected_obj = hit_obj
                 dragging = True
@@ -169,7 +170,8 @@ def timer(v):
 
 def key_down(key, x, y):
     keys.add(key)
-    if key == b'\x1b': sys.exit()
+    if key == b'\x1b':
+        sys.exit()
 
 def key_up(key, x, y):
     keys.discard(key)
