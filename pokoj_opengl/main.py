@@ -143,8 +143,20 @@ def mouse_drag(x, y):
         ray_origin, ray_dir = get_ray_from_mouse(x, y)
         t = (selected_obj["pos"][1] - ray_origin[1]) / ray_dir[1]
         point_on_plane = ray_origin + t * ray_dir
-        selected_obj["pos"][0] = point_on_plane[0]
-        selected_obj["pos"][2] = point_on_plane[2]
+
+        half_size = selected_obj["size"] / 2
+        min_x = -5 + half_size
+        max_x = 5 - half_size
+        min_z = -5 + half_size
+        max_z = 5 - half_size
+
+        # Zabezpieczenie przed "wchodzeniem" w ściany
+        new_x = np.clip(point_on_plane[0], min_x, max_x)
+        new_z = np.clip(point_on_plane[2], min_z, max_z)
+
+        selected_obj["pos"][0] = new_x
+        selected_obj["pos"][2] = new_z
+
 
 def special_input(key, x, y):
     global selected_obj
