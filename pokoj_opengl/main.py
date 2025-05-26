@@ -17,6 +17,9 @@ first_mouse = True
 speed = 0.1
 sensitivity = 0.2
 
+# Kolor ścian (RGB 0–1)
+wall_color = [0.8, 0.8, 0.9]
+
 # Obiekty
 obiekty = [
     Komoda([1.0, -0.5, 1.0]),
@@ -48,7 +51,6 @@ def draw_room():
     glutSolidCube(1)
     glPopMatrix()
 
-    wall_color = (0.8, 0.8, 0.9)
     for pos, scale in [((-5, 0.75, 0), (0.1, 3.5, 10)), ((5, 0.75, 0), (0.1, 3.5, 10)),
                        ((0, 0.75, -5), (10, 3.5, 0.1)), ((0, 0.75, 5), (10, 3.5, 0.1))]:
         glColor3f(*wall_color)
@@ -101,12 +103,11 @@ def check_collision(pos1, size1, pos2, size2):
     max1 = np.array(pos1) + size1 / 2
     min2 = np.array(pos2) - size2 / 2
     max2 = np.array(pos2) + size2 / 2
-
-    overlap_x = max1[0] > min2[0] and min1[0] < max2[0]
-    overlap_y = max1[1] > min2[1] and min1[1] < max2[1]
-    overlap_z = max1[2] > min2[2] and min1[2] < max2[2]
-
-    return overlap_x and overlap_y and overlap_z
+    return (
+        max1[0] > min2[0] and min1[0] < max2[0] and
+        max1[1] > min2[1] and min1[1] < max2[1] and
+        max1[2] > min2[2] and min1[2] < max2[2]
+    )
 
 def mouse_click(button, state, x, y):
     global selected_obj, dragging
@@ -119,10 +120,7 @@ def mouse_click(button, state, x, y):
                     hit_obj = obj
                     break
             if hit_obj is not None:
-                if selected_obj == hit_obj:
-                    selected_obj = None
-                else:
-                    selected_obj = hit_obj
+                selected_obj = None if selected_obj == hit_obj else hit_obj
                 dragging = True
             else:
                 selected_obj = None
@@ -135,25 +133,15 @@ def mouse_drag(x, y):
         ray_origin, ray_dir = get_ray_from_mouse(x, y)
         t = (selected_obj.pos[1] - ray_origin[1]) / ray_dir[1]
         point_on_plane = ray_origin + t * ray_dir
-
         half_size = selected_obj.size / 2
-        min_x = -5 + half_size
-        max_x = 5 - half_size
-        min_z = -5 + half_size
-        max_z = 5 - half_size
-
-        new_x = np.clip(point_on_plane[0], min_x, max_x)
-        new_z = np.clip(point_on_plane[2], min_z, max_z)
+        new_x = np.clip(point_on_plane[0], -5 + half_size, 5 - half_size)
+        new_z = np.clip(point_on_plane[2], -5 + half_size, 5 - half_size)
         proposed_pos = np.array([new_x, selected_obj.pos[1], new_z])
 
         for obj in obiekty:
-            if obj is selected_obj:
-                continue
-            if check_collision(proposed_pos, selected_obj.size, obj.pos, obj.size):
+            if obj is not selected_obj and check_collision(proposed_pos, selected_obj.size, obj.pos, obj.size):
                 return
-
-        selected_obj.pos[0] = new_x
-        selected_obj.pos[2] = new_z
+        selected_obj.pos[0], selected_obj.pos[2] = new_x, new_z
 
 def special_input(key, x, y):
     global selected_obj
@@ -181,26 +169,25 @@ def mouse_motion(x, y):
     if first_mouse:
         last_x, last_y = x, y
         first_mouse = False
-    dx = x - last_x
-    dy = last_y - y
+    dx, dy = x - last_x, last_y - y
     last_x, last_y = x, y
-    dx *= sensitivity
-    dy *= sensitivity
-    yaw += dx
-    pitch += dy
+    yaw += dx * sensitivity
+    pitch += dy * sensitivity
     pitch = max(-89.0, min(89.0, pitch))
-    rad_yaw = np.radians(yaw)
-    rad_pitch = np.radians(pitch)
-    front = np.array([
+    rad_yaw, rad_pitch = np.radians(yaw), np.radians(pitch)
+    camera_front[:] = np.array([
         np.cos(rad_yaw) * np.cos(rad_pitch),
         np.sin(rad_pitch),
         np.sin(rad_yaw) * np.cos(rad_pitch)
-    ])
-    camera_front[:] = front / np.linalg.norm(front)
+    ]) / np.linalg.norm(camera_front)
 
 def set_selected(obj):
     global selected_obj
     selected_obj = obj
+
+def set_wall_color(rgb_tuple):
+    global wall_color
+    wall_color = [c / 255.0 for c in rgb_tuple]
 
 def start_gl():
     glutInit()
@@ -226,4 +213,4 @@ if __name__ == "__main__":
     gl_thread.daemon = True
     gl_thread.start()
 
-    gui.launch_gui(obiekty, lambda: selected_obj, lambda obj: set_selected(obj))
+    gui.launch_gui(obiekty, lambda: selected_obj, lambda obj: set_selected(obj), set_wall_color)
