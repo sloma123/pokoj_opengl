@@ -7,10 +7,10 @@ import sys
 from furniture import Komoda, Stol, TV
 
 # Kamera
-camera_pos = np.array([0.0, 1.0, 5.0])
-camera_front = np.array([0.0, 0.0, -1.0])
-camera_up = np.array([0.0, 1.0, 0.0])
-yaw, pitch = -90.0, 0.0
+camera_pos = np.array([0.0, 1.0, 5.0]) #tablica położenia kamert (x,y,z)
+camera_front = np.array([0.0, 0.0, -1.0])#początkowy zwrot kamery
+camera_up = np.array([0.0, 1.0, 0.0])#wektor wskazujący w górę kamery
+yaw, pitch = -90.0, 0.0 #kąty obrotu kamery w pionie i poziomie
 keys = set()
 last_x, last_y = 400, 300
 first_mouse = True
@@ -30,20 +30,23 @@ obiekty = [
 selected_obj = None
 dragging = False
 
+#Inicjalizacja sceny
 def init():
-    glEnable(GL_DEPTH_TEST)
+    glEnable(GL_DEPTH_TEST) #test głębokości - rysowanie obiektów w odpowiedniej kolejności
     glClearColor(0.5, 0.7, 1.0, 1.0)
     glMatrixMode(GL_PROJECTION)
-    gluPerspective(60, 800 / 600, 0.1, 100.0)
+    gluPerspective(60, 800 / 600, 0.1, 100.0) #perspektywa ludzkiego oka
 
 def draw_room():
-    glColor3f(0.6, 0.4, 0.2)
+    #podłoga
+    glColor3f(0.6, 0.4, 0.2) #kolor
     glPushMatrix()
-    glTranslatef(0, -1, 0)
-    glScalef(10, 0.1, 10)
-    glutSolidCube(1)
+    glTranslatef(0, -1, 0)#przesunięcie poniżej poziomu kamery
+    glScalef(10, 0.1, 10)#skalowanie jako cienki sześcian
+    glutSolidCube(1)#rysowanie sześcianu
     glPopMatrix()
 
+    #sufit
     glColor3f(0.9, 0.9, 0.9)
     glPushMatrix()
     glTranslatef(0, 2.5, 0)
@@ -51,6 +54,7 @@ def draw_room():
     glutSolidCube(1)
     glPopMatrix()
 
+    #ściany
     for pos, scale in [((-5, 0.75, 0), (0.1, 3.5, 10)), ((5, 0.75, 0), (0.1, 3.5, 10)),
                        ((0, 0.75, -5), (10, 3.5, 0.1)), ((0, 0.75, 5), (10, 3.5, 0.1))]:
         glColor3f(*wall_color)
@@ -60,6 +64,7 @@ def draw_room():
         glutSolidCube(1)
         glPopMatrix()
 
+#Rysuje każdy obiekt z tablicy obiekty i podświetla obramowanie zaznaczonego obiektu
 def draw_furniture():
     for obj in obiekty:
         obj.is_selected = (obj == selected_obj)
@@ -69,17 +74,17 @@ def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
-    center = camera_pos + camera_front
+    center = camera_pos + camera_front #punkt, na który patrzy kamera
     gluLookAt(*camera_pos, *center, *camera_up)
     draw_room()
     draw_furniture()
-    glutSwapBuffers()
+    glutSwapBuffers()#double buffering dka płynności animacji
 
 def update_camera():
     global camera_pos
-    front = camera_front / np.linalg.norm(camera_front)
-    right = np.cross(front, camera_up)
-    right /= np.linalg.norm(right)
+    front = camera_front / np.linalg.norm(camera_front)#wekor zwrotu kamery, ustalenie kierunku w osi W i S
+    right = np.cross(front, camera_up)#iloczyn wektorowy, wektor w prawo
+    right /= np.linalg.norm(right)#jednostkowy wektor w prawo
     if b'w' in keys: camera_pos += front * speed
     if b's' in keys: camera_pos -= front * speed
     if b'a' in keys: camera_pos -= right * speed
