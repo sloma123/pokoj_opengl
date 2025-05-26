@@ -19,7 +19,6 @@ class Furniture:
         glPopMatrix()
 
     def draw_geometry(self):
-        # domyślny sześcian
         glPushMatrix()
         glScalef(self.size, self.size, self.size)
         glColor3f(*self.color)

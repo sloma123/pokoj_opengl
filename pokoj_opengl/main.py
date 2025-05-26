@@ -94,6 +94,18 @@ def get_ray_from_mouse(x, y):
     ray_dir /= np.linalg.norm(ray_dir)
     return ray_origin, ray_dir
 
+def check_collision(pos1, size1, pos2, size2):
+    min1 = np.array(pos1) - size1 / 2
+    max1 = np.array(pos1) + size1 / 2
+    min2 = np.array(pos2) - size2 / 2
+    max2 = np.array(pos2) + size2 / 2
+
+    overlap_x = max1[0] > min2[0] and min1[0] < max2[0]
+    overlap_y = max1[1] > min2[1] and min1[1] < max2[1]
+    overlap_z = max1[2] > min2[2] and min1[2] < max2[2]
+
+    return overlap_x and overlap_y and overlap_z
+
 def mouse_click(button, state, x, y):
     global selected_obj
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
@@ -120,6 +132,14 @@ def mouse_drag(x, y):
 
         new_x = np.clip(point_on_plane[0], min_x, max_x)
         new_z = np.clip(point_on_plane[2], min_z, max_z)
+        proposed_pos = np.array([new_x, selected_obj.pos[1], new_z])
+
+        # Sprawdzenie kolizji
+        for obj in obiekty:
+            if obj is selected_obj:
+                continue
+            if check_collision(proposed_pos, selected_obj.size, obj.pos, obj.size):
+                return  # kolizja — nie zmieniaj pozycji
 
         selected_obj.pos[0] = new_x
         selected_obj.pos[2] = new_z
