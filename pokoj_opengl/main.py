@@ -78,7 +78,7 @@ def display():
     gluLookAt(*camera_pos, *center, *camera_up)
     draw_room()
     draw_furniture()
-    glutSwapBuffers()#double buffering dka płynności animacji
+    glutSwapBuffers()#double buffering dla płynności animacji
 
 def update_camera():
     global camera_pos
@@ -99,16 +99,17 @@ def get_ray_from_mouse(x, y):
     near_point = gluUnProject(win_x, win_y, 0.0, modelview, projection, viewport)
     far_point = gluUnProject(win_x, win_y, 1.0, modelview, projection, viewport)
     ray_origin = np.array(near_point)
-    ray_dir = np.array(far_point) - ray_origin
+    ray_dir = np.array(far_point) - ray_origin#wektor kierunku promienia
     ray_dir /= np.linalg.norm(ray_dir)
-    return ray_origin, ray_dir
+    return ray_origin, ray_dir #punkt początkowy i kierunek promienia
 
 def check_collision(pos1, size1, pos2, size2):
-    min1 = np.array(pos1) - size1 / 2
-    max1 = np.array(pos1) + size1 / 2
+    min1 = np.array(pos1) - size1 / 2 #"minimalny" punkt obiektu 1
+    max1 = np.array(pos1) + size1 / 2 #"maksymalny" punkt obiektu 1
     min2 = np.array(pos2) - size2 / 2
     max2 = np.array(pos2) + size2 / 2
     return (
+        #sprawdza czy obiekty się przecinają w każdej osi
         max1[0] > min2[0] and min1[0] < max2[0] and
         max1[1] > min2[1] and min1[1] < max2[1] and
         max1[2] > min2[2] and min1[2] < max2[2]
@@ -125,11 +126,11 @@ def mouse_click(button, state, x, y):
                     hit_obj = obj
                     break
             if hit_obj is not None:
-                selected_obj = None if selected_obj == hit_obj else hit_obj
+                selected_obj = None if selected_obj == hit_obj else hit_obj #jeśli obiekt był zaznaczony - odznacz, jeśli nie - zaznacz
                 dragging = True
             else:
                 selected_obj = None
-        elif state == GLUT_UP:
+        elif state == GLUT_UP: #koniec przeciąania po puszczeniu myszy
             dragging = False
 
 def mouse_drag(x, y):
@@ -139,16 +140,16 @@ def mouse_drag(x, y):
         t = (selected_obj.pos[1] - ray_origin[1]) / ray_dir[1]
         point_on_plane = ray_origin + t * ray_dir
         half_size = selected_obj.size / 2
-        new_x = np.clip(point_on_plane[0], -5 + half_size, 5 - half_size)
+        new_x = np.clip(point_on_plane[0], -5 + half_size, 5 - half_size) #ograniczenie przesunięcia do granic pokoju
         new_z = np.clip(point_on_plane[2], -5 + half_size, 5 - half_size)
         proposed_pos = np.array([new_x, selected_obj.pos[1], new_z])
 
         for obj in obiekty:
             if obj is not selected_obj and check_collision(proposed_pos, selected_obj.size, obj.pos, obj.size):
                 return
-        selected_obj.pos[0], selected_obj.pos[2] = new_x, new_z
+        selected_obj.pos[0], selected_obj.pos[2] = new_x, new_z #zmiana pozycji obiektu
 
-def special_input(key, x, y):
+def special_input(key, x, y): #funkcja do rotacji
     global selected_obj
     if selected_obj:
         if key == GLUT_KEY_LEFT:
@@ -156,7 +157,7 @@ def special_input(key, x, y):
         elif key == GLUT_KEY_RIGHT:
             selected_obj.rotation = (selected_obj.rotation + 10) % 360
 
-def timer(v):
+def timer(v): #odświeżanie sceny
     update_camera()
     glutPostRedisplay()
     glutTimerFunc(16, timer, 0)
@@ -172,13 +173,13 @@ def key_up(key, x, y):
 def mouse_motion(x, y):
     global yaw, pitch, camera_front, last_x, last_y, first_mouse
     if first_mouse:
-        last_x, last_y = x, y
+        last_x, last_y = x, y #zapamiętanie pozycji myszy przy pierwszym ruchu
         first_mouse = False
-    dx, dy = x - last_x, last_y - y
+    dx, dy = x - last_x, last_y - y #jak daleko myszka się przesunęła
     last_x, last_y = x, y
     yaw += dx * sensitivity
     pitch += dy * sensitivity
-    pitch = max(-89.0, min(89.0, pitch))
+    pitch = max(-89.0, min(89.0, pitch)) #ograniczenie kąta nachylenia kamery
     rad_yaw, rad_pitch = np.radians(yaw), np.radians(pitch)
     camera_front[:] = np.array([
         np.cos(rad_yaw) * np.cos(rad_pitch),
