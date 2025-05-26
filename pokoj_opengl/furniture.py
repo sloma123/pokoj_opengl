@@ -1,7 +1,7 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 import numpy as np
-from komoda import draw_komoda
+#from komoda import draw_komoda
 
 class Furniture:
     def __init__(self, name, pos, size, color, rotation=0):
@@ -19,6 +19,7 @@ class Furniture:
         glPopMatrix()
 
     def draw_geometry(self):
+        # domyślny sześcian
         glPushMatrix()
         glScalef(self.size, self.size, self.size)
         glColor3f(*self.color)
@@ -45,10 +46,8 @@ class Furniture:
 
 class Komoda(Furniture):
     def __init__(self, pos):
-        super().__init__("komoda", pos, 1.0, (0.6, 0.3, 0.2))
+        super().__init__("komoda", pos, 1.0, (0.2, 0.4, 0.8))  # niebieska komoda
 
-    def draw_geometry(self):
-        draw_komoda()
 
 class Stol(Furniture):
     def __init__(self, pos):
