@@ -25,6 +25,7 @@ obiekty = [
 ]
 
 selected_obj = None
+dragging = False  # czy trwa przeciąganie
 
 def init():
     glEnable(GL_DEPTH_TEST)
@@ -107,19 +108,29 @@ def check_collision(pos1, size1, pos2, size2):
     return overlap_x and overlap_y and overlap_z
 
 def mouse_click(button, state, x, y):
-    global selected_obj
-    if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
-        ray_origin, ray_dir = get_ray_from_mouse(x, y)
-        for obj in obiekty:
-            if obj.contains_ray(ray_origin, ray_dir):
-                selected_obj = obj
-                break
-    elif button == GLUT_LEFT_BUTTON and state == GLUT_UP:
-        selected_obj = None
+    global selected_obj, dragging
+    if button == GLUT_LEFT_BUTTON:
+        if state == GLUT_DOWN:
+            ray_origin, ray_dir = get_ray_from_mouse(x, y)
+            hit_obj = None
+            for obj in obiekty:
+                if obj.contains_ray(ray_origin, ray_dir):
+                    hit_obj = obj
+                    break
+            if hit_obj is not None:
+                if selected_obj == hit_obj:
+                    selected_obj = None  # klik drugi raz = odznacz
+                else:
+                    selected_obj = hit_obj
+                dragging = True
+            else:
+                selected_obj = None
+        elif state == GLUT_UP:
+            dragging = False
 
 def mouse_drag(x, y):
-    global selected_obj
-    if selected_obj is not None:
+    global selected_obj, dragging
+    if selected_obj is not None and dragging:
         ray_origin, ray_dir = get_ray_from_mouse(x, y)
         t = (selected_obj.pos[1] - ray_origin[1]) / ray_dir[1]
         point_on_plane = ray_origin + t * ray_dir
@@ -134,12 +145,11 @@ def mouse_drag(x, y):
         new_z = np.clip(point_on_plane[2], min_z, max_z)
         proposed_pos = np.array([new_x, selected_obj.pos[1], new_z])
 
-        # Sprawdzenie kolizji
         for obj in obiekty:
             if obj is selected_obj:
                 continue
             if check_collision(proposed_pos, selected_obj.size, obj.pos, obj.size):
-                return  # kolizja — nie zmieniaj pozycji
+                return
 
         selected_obj.pos[0] = new_x
         selected_obj.pos[2] = new_z
@@ -186,7 +196,11 @@ def mouse_motion(x, y):
     ])
     camera_front[:] = front / np.linalg.norm(front)
 
-def main():
+def set_selected(obj):
+    global selected_obj
+    selected_obj = obj
+
+def start_gl():
     glutInit()
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(800, 600)
@@ -203,4 +217,11 @@ def main():
     glutMainLoop()
 
 if __name__ == "__main__":
-    main()
+    import threading
+    import gui
+
+    gl_thread = threading.Thread(target=start_gl)
+    gl_thread.daemon = True
+    gl_thread.start()
+
+    gui.launch_gui(obiekty, lambda: selected_obj, lambda obj: set_selected(obj))
