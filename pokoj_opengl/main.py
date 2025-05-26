@@ -3,7 +3,8 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import numpy as np
 import sys
-from komoda import draw_komoda
+
+from furniture import Komoda, Stol, TV
 
 # Kamera
 camera_pos = np.array([0.0, 1.0, 5.0])
@@ -16,11 +17,11 @@ first_mouse = True
 speed = 0.1
 sensitivity = 0.2
 
-# Lista obiektów z pozycją, rozmiarem, kolorem i rotacją
+# Obiekty
 obiekty = [
-    {"nazwa": "komoda", "pos": np.array([1.0, -0.5, 1.0]), "size": 1.0, "color": (0.6, 0.3, 0.2), "typ": "model", "rot": 0},
-    {"nazwa": "stol",   "pos": np.array([0.0, -0.3, 0.0]), "size": 1.5, "color": (0.4, 0.2, 0.1), "typ": "cube", "rot": 0},
-    {"nazwa": "tv",     "pos": np.array([-2.0, 0.0, -3.0]), "size": 1.0, "color": (0.0, 0.0, 0.0), "typ": "cube", "rot": 0}
+    Komoda([1.0, -0.5, 1.0]),
+    Stol([0.0, -0.3, 0.0]),
+    TV([-2.0, 0.0, -3.0])
 ]
 
 selected_obj = None
@@ -30,14 +31,6 @@ def init():
     glClearColor(0.5, 0.7, 1.0, 1.0)
     glMatrixMode(GL_PROJECTION)
     gluPerspective(60, 800 / 600, 0.1, 100.0)
-
-def draw_cube(x, y, z, size, color):
-    glPushMatrix()
-    glTranslatef(x, y, z)
-    glScalef(size, size, size)
-    glColor3f(*color)
-    glutSolidCube(1)
-    glPopMatrix()
 
 def draw_room():
     glColor3f(0.6, 0.4, 0.2)
@@ -56,7 +49,7 @@ def draw_room():
 
     wall_color = (0.8, 0.8, 0.9)
     for pos, scale in [((-5, 0.75, 0), (0.1, 3.5, 10)), ((5, 0.75, 0), (0.1, 3.5, 10)),
-                   ((0, 0.75, -5), (10, 3.5, 0.1)), ((0, 0.75, 5), (10, 3.5, 0.1))]:
+                       ((0, 0.75, -5), (10, 3.5, 0.1)), ((0, 0.75, 5), (10, 3.5, 0.1))]:
         glColor3f(*wall_color)
         glPushMatrix()
         glTranslatef(*pos)
@@ -66,14 +59,7 @@ def draw_room():
 
 def draw_furniture():
     for obj in obiekty:
-        glPushMatrix()
-        glTranslatef(*obj["pos"])
-        glRotatef(obj.get("rot", 0), 0, 1, 0)  # obrót wokół osi Y
-        if obj["typ"] == "cube":
-            draw_cube(0, 0, 0, obj["size"], obj["color"])
-        elif obj["typ"] == "model" and obj["nazwa"] == "komoda":
-            draw_komoda()
-        glPopMatrix()
+        obj.draw()
 
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -108,30 +94,12 @@ def get_ray_from_mouse(x, y):
     ray_dir /= np.linalg.norm(ray_dir)
     return ray_origin, ray_dir
 
-def ray_hits_box(ray_origin, ray_dir, box_center, box_size):
-    t_min = -np.inf
-    t_max = np.inf
-    bounds_min = box_center - box_size / 2
-    bounds_max = box_center + box_size / 2
-    for i in range(3):
-        if abs(ray_dir[i]) < 1e-8:
-            if ray_origin[i] < bounds_min[i] or ray_origin[i] > bounds_max[i]:
-                return False
-        else:
-            t1 = (bounds_min[i] - ray_origin[i]) / ray_dir[i]
-            t2 = (bounds_max[i] - ray_origin[i]) / ray_dir[i]
-            t_min = max(t_min, min(t1, t2))
-            t_max = min(t_max, max(t1, t2))
-            if t_max < t_min:
-                return False
-    return True
-
 def mouse_click(button, state, x, y):
     global selected_obj
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
         ray_origin, ray_dir = get_ray_from_mouse(x, y)
         for obj in obiekty:
-            if ray_hits_box(ray_origin, ray_dir, obj["pos"], obj["size"]):
+            if obj.contains_ray(ray_origin, ray_dir):
                 selected_obj = obj
                 break
     elif button == GLUT_LEFT_BUTTON and state == GLUT_UP:
@@ -141,30 +109,28 @@ def mouse_drag(x, y):
     global selected_obj
     if selected_obj is not None:
         ray_origin, ray_dir = get_ray_from_mouse(x, y)
-        t = (selected_obj["pos"][1] - ray_origin[1]) / ray_dir[1]
+        t = (selected_obj.pos[1] - ray_origin[1]) / ray_dir[1]
         point_on_plane = ray_origin + t * ray_dir
 
-        half_size = selected_obj["size"] / 2
+        half_size = selected_obj.size / 2
         min_x = -5 + half_size
         max_x = 5 - half_size
         min_z = -5 + half_size
         max_z = 5 - half_size
 
-        # Zabezpieczenie przed "wchodzeniem" w ściany
         new_x = np.clip(point_on_plane[0], min_x, max_x)
         new_z = np.clip(point_on_plane[2], min_z, max_z)
 
-        selected_obj["pos"][0] = new_x
-        selected_obj["pos"][2] = new_z
-
+        selected_obj.pos[0] = new_x
+        selected_obj.pos[2] = new_z
 
 def special_input(key, x, y):
     global selected_obj
     if selected_obj:
         if key == GLUT_KEY_LEFT:
-            selected_obj["rot"] = (selected_obj["rot"] - 10) % 360
+            selected_obj.rotation = (selected_obj.rotation - 10) % 360
         elif key == GLUT_KEY_RIGHT:
-            selected_obj["rot"] = (selected_obj["rot"] + 10) % 360
+            selected_obj.rotation = (selected_obj.rotation + 10) % 360
 
 def timer(v):
     update_camera()
@@ -212,7 +178,7 @@ def main():
     glutPassiveMotionFunc(mouse_motion)
     glutMouseFunc(mouse_click)
     glutMotionFunc(mouse_drag)
-    glutSpecialFunc(special_input)  # ⬅️ obsługa strzałek
+    glutSpecialFunc(special_input)
     glutTimerFunc(0, timer, 0)
     glutMainLoop()
 
