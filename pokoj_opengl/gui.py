@@ -4,7 +4,7 @@ from furniture import Komoda, Stol, TV
 from OpenGL.GLUT import glutPostRedisplay
 
 def launch_gui(obiekty_ref, get_selected, set_selected, set_wall_color):
-    root = tk.Tk()
+    root = tk.Tk() # Utworzenie głównego okna aplikacji
     root.title("Panel zarządzania meblami")
     root.attributes("-topmost", True)
 
@@ -13,7 +13,7 @@ def launch_gui(obiekty_ref, get_selected, set_selected, set_wall_color):
 
     def add_obj(obj_type):
         if obj_type == "komoda":
-            obj = Komoda([0.0, -0.5, 0.0])
+            obj = Komoda([0.0, -0.5, 0.0]) #Ustawianie mebla na środku pokoju, (podłoga na poziome -1)
         elif obj_type == "stol":
             obj = Stol([0.0, -0.5, 0.0])
         elif obj_type == "tv":
@@ -65,4 +65,4 @@ def launch_gui(obiekty_ref, get_selected, set_selected, set_wall_color):
     tk.Button(color_frame, text="Zatwierdź", command=confirm_color).pack(pady=5)
     color_frame.pack_forget()
 
-    root.mainloop()
+    root.mainloop() # Uruchomienie głównej pętli GUI

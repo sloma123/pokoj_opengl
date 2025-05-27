@@ -212,11 +212,11 @@ def start_gl():
     glutMainLoop()
 
 if __name__ == "__main__":
-    import threading
+    import threading #moduł wielowątkowości
     import gui
 
-    gl_thread = threading.Thread(target=start_gl)
-    gl_thread.daemon = True
+    gl_thread = threading.Thread(target=start_gl) #osobny wątek dla OpenGL
+    gl_thread.daemon = True #ustawienie wątku jako demona, aby zakończył się przy zamknięciu programu
     gl_thread.start()
 
-    gui.launch_gui(obiekty, lambda: selected_obj, lambda obj: set_selected(obj), set_wall_color)
+    gui.launch_gui(obiekty, lambda: selected_obj, lambda obj: set_selected(obj), set_wall_color) #główny wątek dla GUI
