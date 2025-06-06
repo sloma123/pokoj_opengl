@@ -56,10 +56,6 @@ class Furniture:
                     return False
         return True
 
-class Komoda(Furniture):
-    def __init__(self, pos):
-        super().__init__("komoda", pos, 1.0, (0.2, 0.4, 0.8))
-
 
 
 
@@ -152,6 +148,19 @@ class Lozko(Szafa):
         self.name = "lozko"
         self.model = pywavefront.Wavefront(
             'C:/Users/Gosia/projekt_obiektowka_gosia_ola/pokoj_opengl/pokoj_opengl/models/Bed.obj',
+            collect_faces=True,
+            create_materials=True
+        )
+
+
+
+class Komoda(Szafa):
+    def __init__(self, pos):
+        super().__init__(pos)
+        self.name = "komoda"
+        self.color = (0.2, 0.4, 0.8)
+        self.model = pywavefront.Wavefront(
+            'C:/Users/Gosia/projekt_obiektowka_gosia_ola/pokoj_opengl/pokoj_opengl/models/SideTable.obj',
             collect_faces=True,
             create_materials=True
         )
