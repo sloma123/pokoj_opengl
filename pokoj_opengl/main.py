@@ -22,14 +22,15 @@ wall_color = [0.8, 0.8, 0.9]
 
 # Obiekty
 obiekty = [
-    Lozko([2.0, -0.5, 0.0]),
-    Koldra([2.0, -0.5, 0.0]),
-    Szafa([-2.0, -0.5, 3.0]),
-    Regal([-3.0, -0.5, 2.0]),
-    Komoda([1.0, -0.5, 1.0]),
-    Stol([0.0, -0.3, 0.0]),
-    TV([-2.0, 0.0, -3.0])
+    Lozko([2.0, -0.95, 0.0]),
+    Koldra([2.0, -0.85, 0.0]),  # lekko wyżej nad łóżkiem
+    Szafa([-2.0, -0.95, 3.0]),
+    Regal([-3.0, -0.95, 2.0]),
+    Komoda([1.0, -0.95, 1.0]),
+    Stol([0.0, -0.5, 0.0]),  # wcześniej było -0.3, za wysoko
+    TV([-2.0, -0.45, -3.0])
 ]
+
 
 selected_obj = None
 dragging = False

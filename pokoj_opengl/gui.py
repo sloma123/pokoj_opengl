@@ -18,6 +18,16 @@ def launch_gui(obiekty_ref, get_selected, set_selected, set_wall_color):
             obj = Stol([0.0, -0.5, 0.0])
         elif obj_type == "tv":
             obj = TV([0.0, -0.5, 0.0])
+        elif obj_type == "lozko":
+            from furniture import Lozko, Koldra
+            obj = Lozko([0.0, -0.5, 0.0])
+            koldra = Koldra([0.0, -0.5, 0.0])
+        elif obj_type == "szafa":
+            from furniture import Szafa
+            obj = Szafa([0.0, -0.5, 0.0])
+        elif obj_type == "regal":
+            from furniture import Regal
+            obj = Regal([0.0, -0.5, 0.0])
         else:
             return
         obiekty_ref.append(obj)
@@ -34,6 +44,9 @@ def launch_gui(obiekty_ref, get_selected, set_selected, set_wall_color):
     tk.Button(frame, text="Dodaj komodę", width=20, command=lambda: add_obj("komoda")).pack(pady=5)
     tk.Button(frame, text="Dodaj stół", width=20, command=lambda: add_obj("stol")).pack(pady=5)
     tk.Button(frame, text="Dodaj TV", width=20, command=lambda: add_obj("tv")).pack(pady=5)
+    tk.Button(frame, text="Dodaj łóżko", width=20, command=lambda: [add_obj("lozko"), add_obj("koldra")]).pack(pady=5)
+    tk.Button(frame, text="Dodaj szafę", width=20, command=lambda: add_obj("szafa")).pack(pady=5)
+    tk.Button(frame, text="Dodaj regał", width=20, command=lambda: add_obj("regal")).pack(pady=5)
 
     tk.Label(frame, text="").pack()
     tk.Button(frame, text="Usuń zaznaczony obiekt", width=20, command=delete_selected).pack(pady=10)
