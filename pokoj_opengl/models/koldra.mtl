@@ -1,0 +1,14 @@
+# Blender 4.4.3 MTL File: 'Faydra Full Bed.blend'
+# www.blender.org
+
+newmtl FUNITURE_029_MAT
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd C:/FUNITURE_029_MAT_BaseColor.png
+map_Ns C:/FUNITURE_029_MAT_Roughness.exr
+map_refl C:/FUNITURE_029_MAT_Metallic.exr
+map_Bump -bm 1.000000 C:/FUNITURE_029_MAT_Normal.exr

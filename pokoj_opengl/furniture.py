@@ -84,11 +84,6 @@ class Stol(Furniture):
             glEnd()
         glPopMatrix()
 
-class TV(Furniture):
-    def __init__(self, pos):
-        super().__init__("tv", pos, 1.0, (0.0, 0.0, 0.0))
-
-
 
 
 class Regal(Furniture):
@@ -152,6 +147,30 @@ class Lozko(Szafa):
             create_materials=True
         )
 
+class Koldra(Lozko):
+    def __init__(self, pos):
+        super().__init__(pos)
+        self.name = "koldra"
+        self.color = (1.0, 1.0, 1.0)  # kolor biały, możesz zmienić
+        self.model = pywavefront.Wavefront(
+            'C:/Users/Gosia/projekt_obiektowka_gosia_ola/pokoj_opengl/pokoj_opengl/models/koldra.obj',
+            collect_faces=True,
+            create_materials=True
+        )
+
+    def draw_geometry(self):
+        glPushMatrix()
+        glTranslatef(0, 0.1, 0)  # przesunięcie lokalne o 0.1 w górę
+        glDisable(GL_LIGHTING)
+        glColor3f(*self.color)
+
+        for mesh in self.model.mesh_list:
+            glBegin(GL_TRIANGLES)
+            for face in mesh.faces:
+                for vertex_i in face:
+                    glVertex3f(*self.model.vertices[vertex_i])
+            glEnd()
+        glPopMatrix()
 
 
 class Komoda(Szafa):
@@ -164,3 +183,29 @@ class Komoda(Szafa):
             collect_faces=True,
             create_materials=True
         )
+
+class TV(Szafa):
+    def __init__(self, pos):
+        super().__init__(pos)
+        self.name = "tv"
+        self.color = (0.0, 0.0, 0.0)
+        self.model = pywavefront.Wavefront(
+            'C:/Users/Gosia/projekt_obiektowka_gosia_ola/pokoj_opengl/pokoj_opengl/models/FlatScreenTelevision.obj',
+            collect_faces=True,
+            create_materials=True
+        )
+    def draw_geometry(self):
+        glPushMatrix()
+        glScalef(0.5, 0.5, 0.5)  # ewentualne skalowanie
+        glDisable(GL_LIGHTING)
+        glColor3f(*self.color)
+
+        for mesh in self.model.mesh_list:
+            glBegin(GL_TRIANGLES)
+            for face in mesh.faces:
+                for vertex_i in face:
+                    glVertex3f(*self.model.vertices[vertex_i])
+            glEnd()
+        glPopMatrix()
+
+    
