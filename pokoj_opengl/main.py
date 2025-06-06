@@ -4,7 +4,7 @@ from OpenGL.GLU import *
 import numpy as np
 import sys
 
-from furniture import Komoda, Stol, TV
+from furniture import Komoda, Stol, TV, Regal
 
 # Kamera
 camera_pos = np.array([0.0, 1.0, 5.0]) #tablica położenia kamert (x,y,z)
@@ -22,6 +22,7 @@ wall_color = [0.8, 0.8, 0.9]
 
 # Obiekty
 obiekty = [
+    Regal([-3.0, -0.5, 2.0]),
     Komoda([1.0, -0.5, 1.0]),
     Stol([0.0, -0.3, 0.0]),
     TV([-2.0, 0.0, -3.0])
