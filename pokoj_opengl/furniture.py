@@ -119,3 +119,39 @@ class Regal(Furniture):
             glEnd()
 
         glPopMatrix()
+
+class Szafa(Furniture):
+    def __init__(self, pos):
+        super().__init__("szafa", pos, 1.0, (0.6, 0.4, 0.3))
+        self.model = pywavefront.Wavefront(
+            'C:/Users/Gosia/projekt_obiektowka_gosia_ola/pokoj_opengl/pokoj_opengl/models/Wardrobe.obj',
+            collect_faces=True,
+            create_materials=True
+        )
+
+    def draw_geometry(self):
+        glPushMatrix()
+        glTranslatef(0, 0, 0)
+       # glScalef(0.01, 0.01, 0.01)
+        glDisable(GL_LIGHTING)
+        glColor3f(*self.color)
+
+        for mesh in self.model.mesh_list:
+            glBegin(GL_TRIANGLES)
+            for face in mesh.faces:
+                for vertex_i in face:
+                    glVertex3f(*self.model.vertices[vertex_i])
+            glEnd()
+
+        glPopMatrix()
+
+
+class Lozko(Szafa):
+    def __init__(self, pos):
+        super().__init__(pos)
+        self.name = "lozko"
+        self.model = pywavefront.Wavefront(
+            'C:/Users/Gosia/projekt_obiektowka_gosia_ola/pokoj_opengl/pokoj_opengl/models/Bed.obj',
+            collect_faces=True,
+            create_materials=True
+        )

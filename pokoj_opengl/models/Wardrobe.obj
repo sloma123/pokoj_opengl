@@ -1,7 +1,7 @@
 # Blender 4.2.3 LTS
 # www.blender.org
-mtllib Mae Steel Wardrobe.mtl
-o Mae_Steel_Wardrobe
+mtllib Wardrobe.mtl
+o Wardrobe
 v -0.629197 0.100074 0.249935
 v -0.629928 0.100074 0.249204
 v -0.629928 0.100074 0.249935
