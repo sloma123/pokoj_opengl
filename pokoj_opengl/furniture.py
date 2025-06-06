@@ -2,6 +2,7 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 import numpy as np
+import pywavefront
 
 class Furniture:
     def __init__(self, name, pos, size, color, rotation=0):
@@ -59,16 +60,40 @@ class Komoda(Furniture):
     def __init__(self, pos):
         super().__init__("komoda", pos, 1.0, (0.2, 0.4, 0.8))
 
+
+
+
 class Stol(Furniture):
     def __init__(self, pos):
-        super().__init__("stol", pos, 1.5, (0.4, 0.2, 0.1))
+        super().__init__("stol", pos, 1.0, (0.4, 0.2, 0.1))
+        self.model = pywavefront.Wavefront(
+            'C:/Users/Gosia/projekt_obiektowka_gosia_ola/pokoj_opengl/pokoj_opengl/models/TableAndChair.obj',
+            collect_faces=True,
+            create_materials=True
+        )
+
+    def draw_geometry(self):
+        glPushMatrix()
+        glTranslatef(*self.pos)
+        #glScalef(0.8, 0.8, 0.8)  # zwiększona skala
+
+        glDisable(GL_LIGHTING)
+        glColor3f(*self.color)
+
+        for mesh in self.model.mesh_list:
+            glBegin(GL_TRIANGLES)
+            for face in mesh.faces:
+                for vertex_i in face:
+                    glVertex3f(*self.model.vertices[vertex_i])
+            glEnd()
+        glPopMatrix()
 
 class TV(Furniture):
     def __init__(self, pos):
         super().__init__("tv", pos, 1.0, (0.0, 0.0, 0.0))
 
 
-import pywavefront
+
 
 class Regal(Furniture):
     def __init__(self, pos):
