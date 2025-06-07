@@ -100,7 +100,7 @@ class Regal(Furniture):
         glTranslatef(0, 0, 0)
         glScalef(0.01, 0.01, 0.01)
         glDisable(GL_LIGHTING)
-        glColor3f(0.7, 0.5, 0.3)
+        glColor3f(*self.color)  # <-- Użyj dynamicznego koloru
 
         for mesh in self.model.mesh_list:
             glBegin(GL_TRIANGLES)
@@ -110,6 +110,7 @@ class Regal(Furniture):
             glEnd()
 
         glPopMatrix()
+
 
 class Szafa(Furniture):
     def __init__(self, pos):

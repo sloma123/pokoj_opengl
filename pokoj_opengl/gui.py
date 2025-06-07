@@ -13,25 +13,33 @@ def launch_gui(obiekty_ref, get_selected, set_selected, set_wall_color):
 
     def add_obj(obj_type):
         if obj_type == "komoda":
-            obj = Komoda([0.0, -0.5, 0.0]) #Ustawianie mebla na środku pokoju, (podłoga na poziome -1)
+            obj = Komoda([0.0, -0.95, 0.0])
+            obiekty_ref.append(obj)
         elif obj_type == "stol":
-            obj = Stol([0.0, -0.5, 0.0])
+            obj = Stol([0.0, -0.95, 0.0])
+            obiekty_ref.append(obj)
         elif obj_type == "tv":
-            obj = TV([0.0, -0.5, 0.0])
+            obj = TV([0.0, -0.95, 0.0])
+            obiekty_ref.append(obj)
         elif obj_type == "lozko":
             from furniture import Lozko, Koldra
-            obj = Lozko([0.0, -0.5, 0.0])
-            koldra = Koldra([0.0, -0.5, 0.0])
+            lozko = Lozko([0.0, -0.95, 0.0])
+            koldra = Koldra([0.0, -0.95, 0.0])
+            obiekty_ref.append(lozko)
+            obiekty_ref.append(koldra)
         elif obj_type == "szafa":
             from furniture import Szafa
-            obj = Szafa([0.0, -0.5, 0.0])
+            obj = Szafa([0.0, -0.95, 0.0])
+            obiekty_ref.append(obj)
         elif obj_type == "regal":
             from furniture import Regal
-            obj = Regal([0.0, -0.5, 0.0])
+            obj = Regal([0.0, -0.95, 0.0])
+            obiekty_ref.append(obj)
         else:
             return
-        obiekty_ref.append(obj)
+
         glutPostRedisplay()
+
 
     def delete_selected():
         obj = get_selected()
@@ -40,16 +48,27 @@ def launch_gui(obiekty_ref, get_selected, set_selected, set_wall_color):
             set_selected(None)
             glutPostRedisplay()
 
+    def change_object_color():
+        obj = get_selected()
+        if obj:
+            color_code = colorchooser.askcolor(title="Wybierz kolor obiektu")
+            if color_code[0]:
+                rgb_float = tuple(c / 255.0 for c in color_code[0])
+                obj.color = rgb_float
+                glutPostRedisplay()
+
     # --- UI Przycisków dodawania/usuń
     tk.Button(frame, text="Dodaj komodę", width=20, command=lambda: add_obj("komoda")).pack(pady=5)
     tk.Button(frame, text="Dodaj stół", width=20, command=lambda: add_obj("stol")).pack(pady=5)
     tk.Button(frame, text="Dodaj TV", width=20, command=lambda: add_obj("tv")).pack(pady=5)
-    tk.Button(frame, text="Dodaj łóżko", width=20, command=lambda: [add_obj("lozko"), add_obj("koldra")]).pack(pady=5)
+    tk.Button(frame, text="Dodaj łóżko", width=20, command=lambda: add_obj("lozko")).pack(pady=5)
     tk.Button(frame, text="Dodaj szafę", width=20, command=lambda: add_obj("szafa")).pack(pady=5)
     tk.Button(frame, text="Dodaj regał", width=20, command=lambda: add_obj("regal")).pack(pady=5)
 
     tk.Label(frame, text="").pack()
     tk.Button(frame, text="Usuń zaznaczony obiekt", width=20, command=delete_selected).pack(pady=10)
+    tk.Button(frame, text="Zmień kolor obiektu", width=20, command=change_object_color).pack(pady=5)
+
 
     # --- Sekcja zmiany koloru ścian ---
     def show_wall_color_controls():
