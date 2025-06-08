@@ -127,6 +127,8 @@ class Regal(Furniture):
             glEnd()
         glPopMatrix()
 
+    
+
 
 class Szafa(Furniture):
     def __init__(self, pos):
@@ -217,7 +219,7 @@ class TV(Szafa):
     def draw_geometry(self):
         glPushMatrix()
         glTranslatef(*(-self.model_min * self.scale_factor))
-        glScalef(0.5, 0.5, 0.5)
+        #glScalef(0.5, 0.5, 0.5)
         glDisable(GL_LIGHTING)
         glColor3f(*self.color)
         for mesh in self.model.mesh_list:
