@@ -1,4 +1,3 @@
-
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 import numpy as np
@@ -12,22 +11,45 @@ class Furniture:
         self.color = color
         self.rotation = rotation
         self.is_selected = False
+        self.model = None
+        self.scale_factor = 1.0
+        self.model_center = np.zeros(3)
+        self.model_min = np.zeros(3)
+        self.model_size = np.ones(3)
+
+    def compute_model_bounds(self):
+        all_vertices = np.array(self.model.vertices)
+        min_bounds = np.min(all_vertices, axis=0)
+        max_bounds = np.max(all_vertices, axis=0)
+        self.model_center = (min_bounds + max_bounds) / 2
+        self.model_min = min_bounds
+        self.model_size = max_bounds - min_bounds
 
     def draw(self):
         glPushMatrix()
         glTranslatef(*self.pos)
         glRotatef(self.rotation, 0, 1, 0)
         self.draw_geometry()
+
         if self.is_selected:
             glPushAttrib(GL_ENABLE_BIT)
             glDisable(GL_LIGHTING)
             glColor3f(1.0, 0.0, 0.0)
             glLineWidth(3.0)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-            glScalef(self.size * 1.01, self.size * 1.01, self.size * 1.01)
+
+            # Dla regału: przesunięcie identyczne jak w draw_geometry()
+            bbox_offset = -self.model_min
+            bbox_offset[1] += self.model_center[1] - self.model_min[1]
+            glTranslatef(*(bbox_offset * self.scale_factor))
+
+            glScalef(*(self.model_size * self.scale_factor * 1.01))
             glutWireCube(1.0)
+
+
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
             glPopAttrib()
+
         glPopMatrix()
 
     def draw_geometry(self):
@@ -57,8 +79,6 @@ class Furniture:
         return True
 
 
-
-
 class Stol(Furniture):
     def __init__(self, pos):
         super().__init__("stol", pos, 1.0, (0.4, 0.2, 0.1))
@@ -67,15 +87,13 @@ class Stol(Furniture):
             collect_faces=True,
             create_materials=True
         )
+        self.compute_model_bounds()
 
     def draw_geometry(self):
         glPushMatrix()
-        glTranslatef(*self.pos)
-        #glScalef(0.8, 0.8, 0.8)  # zwiększona skala
-
+        glTranslatef(*(-self.model_min * self.scale_factor))
         glDisable(GL_LIGHTING)
         glColor3f(*self.color)
-
         for mesh in self.model.mesh_list:
             glBegin(GL_TRIANGLES)
             for face in mesh.faces:
@@ -83,7 +101,6 @@ class Stol(Furniture):
                     glVertex3f(*self.model.vertices[vertex_i])
             glEnd()
         glPopMatrix()
-
 
 
 class Regal(Furniture):
@@ -94,21 +111,20 @@ class Regal(Furniture):
             collect_faces=True,
             create_materials=True
         )
+        self.compute_model_bounds()
+
 
     def draw_geometry(self):
         glPushMatrix()
-        glTranslatef(0, 0, 0)
-        glScalef(0.01, 0.01, 0.01)
+        glTranslatef(*(-self.model_min * self.scale_factor))
         glDisable(GL_LIGHTING)
-        glColor3f(*self.color)  # <-- Użyj dynamicznego koloru
-
+        glColor3f(*self.color)
         for mesh in self.model.mesh_list:
             glBegin(GL_TRIANGLES)
             for face in mesh.faces:
                 for vertex_i in face:
                     glVertex3f(*self.model.vertices[vertex_i])
             glEnd()
-
         glPopMatrix()
 
 
@@ -120,21 +136,19 @@ class Szafa(Furniture):
             collect_faces=True,
             create_materials=True
         )
+        self.compute_model_bounds()
 
     def draw_geometry(self):
         glPushMatrix()
-        glTranslatef(0, 0, 0)
-       # glScalef(0.01, 0.01, 0.01)
+        glTranslatef(*(-self.model_min * self.scale_factor))
         glDisable(GL_LIGHTING)
         glColor3f(*self.color)
-
         for mesh in self.model.mesh_list:
             glBegin(GL_TRIANGLES)
             for face in mesh.faces:
                 for vertex_i in face:
                     glVertex3f(*self.model.vertices[vertex_i])
             glEnd()
-
         glPopMatrix()
 
 
@@ -147,24 +161,26 @@ class Lozko(Szafa):
             collect_faces=True,
             create_materials=True
         )
+        self.compute_model_bounds()
 
 class Koldra(Lozko):
     def __init__(self, pos):
         super().__init__(pos)
         self.name = "koldra"
-        self.color = (1.0, 1.0, 1.0)  # kolor biały, możesz zmienić
+        self.color = (1.0, 1.0, 1.0)
         self.model = pywavefront.Wavefront(
             'C:/Users/Gosia/projekt_obiektowka_gosia_ola/pokoj_opengl/pokoj_opengl/models/koldra.obj',
             collect_faces=True,
             create_materials=True
         )
+        self.compute_model_bounds()
 
     def draw_geometry(self):
         glPushMatrix()
-        glTranslatef(0, 0.1, 0)  # przesunięcie lokalne o 0.1 w górę
+        glTranslatef(*(-self.model_min * self.scale_factor))
+        glTranslatef(0, 0.1, 0)
         glDisable(GL_LIGHTING)
         glColor3f(*self.color)
-
         for mesh in self.model.mesh_list:
             glBegin(GL_TRIANGLES)
             for face in mesh.faces:
@@ -184,6 +200,7 @@ class Komoda(Szafa):
             collect_faces=True,
             create_materials=True
         )
+        self.compute_model_bounds()
 
 class TV(Szafa):
     def __init__(self, pos):
@@ -195,12 +212,14 @@ class TV(Szafa):
             collect_faces=True,
             create_materials=True
         )
+        self.compute_model_bounds()
+
     def draw_geometry(self):
         glPushMatrix()
-        glScalef(0.5, 0.5, 0.5)  # ewentualne skalowanie
+        glTranslatef(*(-self.model_min * self.scale_factor))
+        glScalef(0.5, 0.5, 0.5)
         glDisable(GL_LIGHTING)
         glColor3f(*self.color)
-
         for mesh in self.model.mesh_list:
             glBegin(GL_TRIANGLES)
             for face in mesh.faces:
@@ -208,5 +227,3 @@ class TV(Szafa):
                     glVertex3f(*self.model.vertices[vertex_i])
             glEnd()
         glPopMatrix()
-
-    
