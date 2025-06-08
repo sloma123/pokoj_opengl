@@ -3,6 +3,12 @@ from OpenGL.GLUT import *
 import numpy as np
 import pywavefront
 
+
+from OpenGL.GL import *
+from OpenGL.GLUT import *
+import numpy as np
+import pywavefront
+
 class Furniture:
     def __init__(self, name, pos, size, color, rotation=0):
         self.name = name
@@ -16,6 +22,14 @@ class Furniture:
         self.model_center = np.zeros(3)
         self.model_min = np.zeros(3)
         self.model_size = np.ones(3)
+
+    def get_bounding_box_size(self):
+        return self.model_size * self.scale_factor * 1.01
+
+    def get_box_offset(self):
+        offset = -self.model_min.copy()
+        offset[1] += self.model_center[1] - self.model_min[1]
+        return offset * self.scale_factor
 
     def compute_model_bounds(self):
         all_vertices = np.array(self.model.vertices)
@@ -37,16 +51,9 @@ class Furniture:
             glColor3f(1.0, 0.0, 0.0)
             glLineWidth(3.0)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-
-            # Dla regału: przesunięcie identyczne jak w draw_geometry()
-            bbox_offset = -self.model_min
-            bbox_offset[1] += self.model_center[1] - self.model_min[1]
-            glTranslatef(*(bbox_offset * self.scale_factor))
-
+            glTranslatef(*self.get_box_offset())
             glScalef(*(self.model_size * self.scale_factor * 1.01))
             glutWireCube(1.0)
-
-
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
             glPopAttrib()
 
@@ -54,17 +61,27 @@ class Furniture:
 
     def draw_geometry(self):
         glPushMatrix()
-        glScalef(self.size, self.size, self.size)
+        glTranslatef(*(-self.model_min * self.scale_factor))
         glDisable(GL_LIGHTING)
         glColor3f(*self.color)
-        glutSolidCube(1)
+        for mesh in self.model.mesh_list:
+            glBegin(GL_TRIANGLES)
+            for face in mesh.faces:
+                for vertex_i in face:
+                    glVertex3f(*self.model.vertices[vertex_i])
+            glEnd()
         glPopMatrix()
+
+    def get_bounds(self):
+        offset = self.get_box_offset()
+        min_corner = self.pos + offset
+        max_corner = min_corner + self.model_size * self.scale_factor * 1.01
+        return min_corner, max_corner
 
     def contains_ray(self, ray_origin, ray_dir):
         t_min = -np.inf
         t_max = np.inf
-        bounds_min = self.pos - self.size / 2
-        bounds_max = self.pos + self.size / 2
+        bounds_min, bounds_max = self.get_bounds()
         for i in range(3):
             if abs(ray_dir[i]) < 1e-8:
                 if ray_origin[i] < bounds_min[i] or ray_origin[i] > bounds_max[i]:
@@ -77,7 +94,6 @@ class Furniture:
                 if t_max < t_min:
                     return False
         return True
-
 
 class Stol(Furniture):
     def __init__(self, pos):
