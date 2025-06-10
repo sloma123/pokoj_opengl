@@ -36,9 +36,15 @@ class Furniture:
             glColor3f(1.0, 0.0, 0.0)
             glLineWidth(3.0)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-            glTranslatef(*(-self.center_offset))
+            # Oblicz offset tylko w poziomie
+            frame_offset = np.array([self.center_offset[0], 0.0, self.center_offset[2]])
+            glTranslatef(*(-frame_offset))
+
+            # Dopasuj skalę bounding boxa
+            glTranslatef(0.0, self.bounds_min[1] + self.size_vec[1] / 2, 0.0)
             glScalef(*(self.size_vec * 1.01))
             glutWireCube(1.0)
+
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
             glPopAttrib()
         glPopMatrix()
