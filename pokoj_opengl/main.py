@@ -111,11 +111,11 @@ def get_ray_from_mouse(x, y):
     ray_dir /= np.linalg.norm(ray_dir)
     return ray_origin, ray_dir
 
-def check_collision(pos1, size1, pos2, size2):
-    min1 = np.array(pos1) - size1 / 2
-    max1 = np.array(pos1) + size1 / 2
-    min2 = np.array(pos2) - size2 / 2
-    max2 = np.array(pos2) + size2 / 2
+def check_collision(obj1, obj2):
+    min1 = obj1.pos + obj1.bounds_min - obj1.center_offset
+    max1 = obj1.pos + obj1.bounds_max - obj1.center_offset
+    min2 = obj2.pos + obj2.bounds_min - obj2.center_offset
+    max2 = obj2.pos + obj2.bounds_max - obj2.center_offset
     return (
         max1[0] > min2[0] and min1[0] < max2[0] and
         max1[1] > min2[1] and min1[1] < max2[1] and
@@ -146,14 +146,24 @@ def mouse_drag(x, y):
         ray_origin, ray_dir = get_ray_from_mouse(x, y)
         t = (selected_obj.pos[1] - ray_origin[1]) / ray_dir[1]
         point_on_plane = ray_origin + t * ray_dir
+
+        # Domyślny margines
+        margin = 0.0
+        if selected_obj.name == "lozko":
+            margin = 1.0  # dodatkowy bufor dla łóżka
+
         half_size = selected_obj.size / 2
-        new_x = np.clip(point_on_plane[0], -4 + half_size, 4 - half_size)
-        new_z = np.clip(point_on_plane[2], -4 + half_size, 4 - half_size)
-        proposed_pos = np.array([new_x, selected_obj.pos[1], new_z])
-        for obj in obiekty:
-            if obj is not selected_obj and check_collision(proposed_pos, selected_obj.size, obj.pos, obj.size):
-                return
+        new_x = np.clip(point_on_plane[0], -4 + half_size + margin, 4 - half_size - margin)
+        new_z = np.clip(point_on_plane[2], -4 + half_size + margin, 4 - half_size - margin)
+
+        original_pos = selected_obj.pos.copy()
         selected_obj.pos[0], selected_obj.pos[2] = new_x, new_z
+
+        for obj in obiekty:
+            if obj is not selected_obj and check_collision(selected_obj, obj):
+                selected_obj.pos = original_pos  # cofnij pozycję przy kolizji
+                return
+
 
 def special_input(key, x, y):
     global selected_obj

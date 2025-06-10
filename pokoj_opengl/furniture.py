@@ -1,4 +1,3 @@
-
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 import numpy as np
@@ -12,6 +11,19 @@ class Furniture:
         self.color = color
         self.rotation = rotation
         self.is_selected = False
+        self.bounds_min = np.array([-0.5, -0.5, -0.5]) * size
+        self.bounds_max = np.array([0.5, 0.5, 0.5]) * size
+        self.center_offset = np.array([0.0, 0.0, 0.0])
+        self.size_vec = np.array([size, size, size])
+        #self.parent = None
+
+
+    def compute_bounds(self):
+        vertices = np.array(self.model.vertices)
+        self.bounds_min = vertices.min(axis=0)
+        self.bounds_max = vertices.max(axis=0)
+        self.center_offset = (self.bounds_min + self.bounds_max) / 2
+        self.size_vec = self.bounds_max - self.bounds_min
 
     def draw(self):
         glPushMatrix()
@@ -24,7 +36,8 @@ class Furniture:
             glColor3f(1.0, 0.0, 0.0)
             glLineWidth(3.0)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-            glScalef(self.size * 1.01, self.size * 1.01, self.size * 1.01)
+            glTranslatef(*(-self.center_offset))
+            glScalef(*(self.size_vec * 1.01))
             glutWireCube(1.0)
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
             glPopAttrib()
@@ -41,8 +54,8 @@ class Furniture:
     def contains_ray(self, ray_origin, ray_dir):
         t_min = -np.inf
         t_max = np.inf
-        bounds_min = self.pos - self.size / 2
-        bounds_max = self.pos + self.size / 2
+        bounds_min = self.pos + self.bounds_min - self.center_offset
+        bounds_max = self.pos + self.bounds_max - self.center_offset
         for i in range(3):
             if abs(ray_dir[i]) < 1e-8:
                 if ray_origin[i] < bounds_min[i] or ray_origin[i] > bounds_max[i]:
@@ -56,9 +69,7 @@ class Furniture:
                     return False
         return True
 
-
-
-
+# Przykład implementacji klasy modelu z compute_bounds()
 class Stol(Furniture):
     def __init__(self, pos):
         super().__init__("stol", pos, 1.0, (0.4, 0.2, 0.1))
@@ -67,15 +78,13 @@ class Stol(Furniture):
             collect_faces=True,
             create_materials=True
         )
+        self.compute_bounds()
 
     def draw_geometry(self):
         glPushMatrix()
-        glTranslatef(*self.pos)
-        #glScalef(0.8, 0.8, 0.8)  # zwiększona skala
-
+        glTranslatef(*(-self.center_offset))
         glDisable(GL_LIGHTING)
         glColor3f(*self.color)
-
         for mesh in self.model.mesh_list:
             glBegin(GL_TRIANGLES)
             for face in mesh.faces:
@@ -83,7 +92,6 @@ class Stol(Furniture):
                     glVertex3f(*self.model.vertices[vertex_i])
             glEnd()
         glPopMatrix()
-
 
 
 class Regal(Furniture):
@@ -94,11 +102,12 @@ class Regal(Furniture):
             collect_faces=True,
             create_materials=True
         )
+        self.compute_bounds()
 
     def draw_geometry(self):
         glPushMatrix()
         glTranslatef(0, 0, 0)
-        glScalef(0.01, 0.01, 0.01)
+        #glScalef(0.01, 0.01, 0.01)
         glDisable(GL_LIGHTING)
         glColor3f(*self.color)  # <-- Użyj dynamicznego koloru
 
@@ -120,6 +129,7 @@ class Szafa(Furniture):
             collect_faces=True,
             create_materials=True
         )
+        self.compute_bounds()
 
     def draw_geometry(self):
         glPushMatrix()
@@ -147,6 +157,7 @@ class Lozko(Szafa):
             collect_faces=True,
             create_materials=True
         )
+        self.compute_bounds()
 
 class Koldra(Lozko):
     def __init__(self, pos):
@@ -158,6 +169,7 @@ class Koldra(Lozko):
             collect_faces=True,
             create_materials=True
         )
+        self.compute_bounds()
 
     def draw_geometry(self):
         glPushMatrix()
@@ -184,6 +196,7 @@ class Komoda(Szafa):
             collect_faces=True,
             create_materials=True
         )
+        self.compute_bounds()
 
 class TV(Szafa):
     def __init__(self, pos):
@@ -195,9 +208,11 @@ class TV(Szafa):
             collect_faces=True,
             create_materials=True
         )
+        self.compute_bounds()
+
     def draw_geometry(self):
         glPushMatrix()
-        glScalef(0.5, 0.5, 0.5)  # ewentualne skalowanie
+       # glScalef(0.5, 0.5, 0.5)  # ewentualne skalowanie
         glDisable(GL_LIGHTING)
         glColor3f(*self.color)
 
