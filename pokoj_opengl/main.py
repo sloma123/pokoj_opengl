@@ -151,6 +151,8 @@ def mouse_drag(x, y):
         margin = 0.0
         if selected_obj.name == "lozko":
             margin = 1.0  # dodatkowy bufor dla łóżka
+        elif selected_obj.name == "stol":
+            margin = 0.4
 
         half_size = selected_obj.size / 2
         new_x = np.clip(point_on_plane[0], -4 + half_size + margin, 4 - half_size - margin)
