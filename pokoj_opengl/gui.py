@@ -19,8 +19,13 @@ def launch_gui(obiekty_ref, get_selected, set_selected, set_wall_color):
             obj = Stol([0.0, -0.95, 0.0])
             obiekty_ref.append(obj)
         elif obj_type == "tv":
-            obj = TV([0.0, -0.95, 0.0])
-            obiekty_ref.append(obj)
+            selected = get_selected()
+            if selected and selected.name == "komoda":
+                # Dodaj tylko jeśli TV jeszcze nie został dodany do sceny
+                if hasattr(selected, "attached_tv") and selected.attached_tv not in obiekty_ref:
+                    obiekty_ref.append(selected.attached_tv)
+                    glutPostRedisplay()
+
         elif obj_type == "lozko":
             from furniture import Lozko, Koldra
             lozko = Lozko([0.0, -0.95, 0.0])
@@ -44,9 +49,13 @@ def launch_gui(obiekty_ref, get_selected, set_selected, set_wall_color):
     def delete_selected():
         obj = get_selected()
         if obj in obiekty_ref:
+            # Jeśli usuwany obiekt to komoda – usuń też jej TV
+            if hasattr(obj, "attached_tv") and obj.attached_tv in obiekty_ref:
+                obiekty_ref.remove(obj.attached_tv)
             obiekty_ref.remove(obj)
             set_selected(None)
             glutPostRedisplay()
+
 
     def change_object_color():
         obj = get_selected()

@@ -22,16 +22,17 @@ sensitivity = 0.2
 # Kolor ścian
 wall_color = [0.8, 0.8, 0.9]
 
-# Obiekty w środku pokoju
+komoda = Komoda([2.6, -0.95, 1.0])
 obiekty = [
     Lozko([2.5, -0.95, -2.5]),
     Koldra([2.5, -0.85, -2.5]),
     Szafa([-2.5, -0.95, 2.2]),
     Regal([-3.5, -0.95, -3.5]),
     Stol([-0.55, -0.5, -2.9]),
-    Komoda([2.6, -0.95, 1.0]),
-    TV([2.6, -0.25, 1.0])           # TV na komodzie
+    komoda,
+    komoda.attached_tv  # dodany TV
 ]
+
 
 selected_obj = None
 dragging = False

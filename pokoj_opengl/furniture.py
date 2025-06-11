@@ -211,11 +211,19 @@ class Komoda(Szafa):
         )
         self.compute_bounds()
 
+        # Dodaj TV przy tworzeniu komody
+        self.attached_tv = TV(self)
+
 class TV(Szafa):
-    def __init__(self, pos):
-        super().__init__(pos)
+    def __init__(self, parent):
+        self.parent = parent
         self.name = "tv"
         self.color = (0.0, 0.0, 0.0)
+        self.size = 1.0  # lub odpowiedni rozmiar, np. 0.6, jeśli chcesz mniejszy TV
+
+        self.rotation = 0
+        self.is_selected = False
+
         self.model = pywavefront.Wavefront(
             'C:/Users/Gosia/projekt_obiektowka_gosia_ola/pokoj_opengl/pokoj_opengl/models/FlatScreenTelevision.obj',
             collect_faces=True,
@@ -223,12 +231,15 @@ class TV(Szafa):
         )
         self.compute_bounds()
 
+    @property
+    def pos(self):
+        # ustaw TV lekko ponad komodą
+        return self.parent.pos + np.array([0.0, 0.7, 0.0])
+
     def draw_geometry(self):
         glPushMatrix()
-       # glScalef(0.5, 0.5, 0.5)  # ewentualne skalowanie
         glDisable(GL_LIGHTING)
         glColor3f(*self.color)
-
         for mesh in self.model.mesh_list:
             glBegin(GL_TRIANGLES)
             for face in mesh.faces:
@@ -236,5 +247,6 @@ class TV(Szafa):
                     glVertex3f(*self.model.vertices[vertex_i])
             glEnd()
         glPopMatrix()
+
 
     
