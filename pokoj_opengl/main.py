@@ -24,13 +24,13 @@ wall_color = [0.8, 0.8, 0.9]
 
 # Obiekty w środku pokoju
 obiekty = [
-    Lozko([1.2, -0.95, 0.0]),
-    Koldra([1.2, -0.85, 0.0]),
+    Lozko([2.5, -0.95, -2.5]),
+    Koldra([2.5, -0.85, -2.5]),
     Szafa([-2.5, -0.95, 2.2]),
-    Regal([-2.8, -0.95, 1.0]),
-    Komoda([1.0, -0.95, 1.5]),
-    Stol([0.0, -0.5, 0.0]),
-    TV([-2.0, -0.45, -2.8])
+    Regal([-3.5, -0.95, -3.5]),
+    Stol([-0.55, -0.5, -2.9]),
+    Komoda([2.6, -0.95, 1.0]),
+    TV([2.6, -0.25, 1.0])           # TV na komodzie
 ]
 
 selected_obj = None
@@ -153,6 +153,8 @@ def mouse_drag(x, y):
             margin = 1.0  # dodatkowy bufor dla łóżka
         elif selected_obj.name == "stol":
             margin = 0.4
+        elif selected_obj.name == "szafa": 
+            margin = 0.5
 
         half_size = selected_obj.size / 2
         new_x = np.clip(point_on_plane[0], -4 + half_size + margin, 4 - half_size - margin)
