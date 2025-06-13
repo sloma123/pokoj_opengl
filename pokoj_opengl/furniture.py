@@ -15,8 +15,6 @@ class Furniture:
         self.bounds_max = np.array([0.5, 0.5, 0.5]) * size
         self.center_offset = np.array([0.0, 0.0, 0.0])
         self.size_vec = np.array([size, size, size])
-        #self.parent = None
-
 
     def compute_bounds(self):
         vertices = np.array(self.model.vertices)
@@ -37,11 +35,9 @@ class Furniture:
             glLineWidth(3.0)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
 
-            # Przesunięcie tylko w poziomie (pomijamy Y)
             frame_offset = np.array([self.center_offset[0], 0.0, self.center_offset[2]])
             glTranslatef(*(-frame_offset))
 
-            # Obniż ramkę tylko dla stołu
             if self.name == "stol":
                 offset_y = self.center_offset[1] - (self.size_vec[1] / 2)
                 glTranslatef(0.0, offset_y, 0.0)
@@ -53,7 +49,6 @@ class Furniture:
 
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
             glPopAttrib()
-
         glPopMatrix()
 
     def draw_geometry(self):
@@ -82,12 +77,12 @@ class Furniture:
                     return False
         return True
 
-# Przykład implementacji klasy modelu z compute_bounds()
+
 class Stol(Furniture):
     def __init__(self, pos):
         super().__init__("stol", pos, 1.0, (0.4, 0.2, 0.1))
         self.model = pywavefront.Wavefront(
-            'C:/Users/Gosia/projekt_obiektowka_gosia_ola/pokoj_opengl/pokoj_opengl/models/TableAndChair.obj',
+            'C:/Users/aleks/vs/pokoj_opengl/pokoj_opengl/models/TableAndChair.obj',
             collect_faces=True,
             create_materials=True
         )
@@ -111,7 +106,7 @@ class Regal(Furniture):
     def __init__(self, pos):
         super().__init__("regal", pos, 1.0, (0.7, 0.5, 0.3))
         self.model = pywavefront.Wavefront(
-            'C:/Users/Gosia/projekt_obiektowka_gosia_ola/pokoj_opengl/pokoj_opengl/models/oak_bookshelf.obj',
+            'C:/Users/aleks/vs/pokoj_opengl/pokoj_opengl/models/oak_bookshelf.obj',
             collect_faces=True,
             create_materials=True
         )
@@ -119,18 +114,14 @@ class Regal(Furniture):
 
     def draw_geometry(self):
         glPushMatrix()
-        glTranslatef(0, 0, 0)
-        #glScalef(0.01, 0.01, 0.01)
         glDisable(GL_LIGHTING)
-        glColor3f(*self.color)  # <-- Użyj dynamicznego koloru
-
+        glColor3f(*self.color)
         for mesh in self.model.mesh_list:
             glBegin(GL_TRIANGLES)
             for face in mesh.faces:
                 for vertex_i in face:
                     glVertex3f(*self.model.vertices[vertex_i])
             glEnd()
-
         glPopMatrix()
 
 
@@ -138,7 +129,7 @@ class Szafa(Furniture):
     def __init__(self, pos):
         super().__init__("szafa", pos, 1.0, (0.6, 0.4, 0.3))
         self.model = pywavefront.Wavefront(
-            'C:/Users/Gosia/projekt_obiektowka_gosia_ola/pokoj_opengl/pokoj_opengl/models/Wardrobe.obj',
+            'C:/Users/aleks/vs/pokoj_opengl/pokoj_opengl/models/Wardrobe.obj',
             collect_faces=True,
             create_materials=True
         )
@@ -146,18 +137,14 @@ class Szafa(Furniture):
 
     def draw_geometry(self):
         glPushMatrix()
-        glTranslatef(0, 0, 0)
-       # glScalef(0.01, 0.01, 0.01)
         glDisable(GL_LIGHTING)
         glColor3f(*self.color)
-
         for mesh in self.model.mesh_list:
             glBegin(GL_TRIANGLES)
             for face in mesh.faces:
                 for vertex_i in face:
                     glVertex3f(*self.model.vertices[vertex_i])
             glEnd()
-
         glPopMatrix()
 
 
@@ -166,30 +153,50 @@ class Lozko(Szafa):
         super().__init__(pos)
         self.name = "lozko"
         self.model = pywavefront.Wavefront(
-            'C:/Users/Gosia/projekt_obiektowka_gosia_ola/pokoj_opengl/pokoj_opengl/models/Bed.obj',
+            'C:/Users/aleks/vs/pokoj_opengl/pokoj_opengl/models/Bed.obj',
+            collect_faces=True,
+            create_materials=True
+        )
+        self.compute_bounds()
+        self.attached_koldra = Koldra(self)
+        
+
+
+class Koldra(Szafa):
+    def __init__(self, parent):
+        self.parent = parent
+        self.name = "koldra"
+        self.color = (1.0, 1.0, 1.0)
+        self.size = 1.0
+        self.is_selected = False
+
+        self.model = pywavefront.Wavefront(
+            'C:/Users/aleks/vs/pokoj_opengl/pokoj_opengl/models/koldra.obj',
             collect_faces=True,
             create_materials=True
         )
         self.compute_bounds()
 
-class Koldra(Lozko):
-    def __init__(self, pos):
-        super().__init__(pos)
-        self.name = "koldra"
-        self.color = (1.0, 1.0, 1.0)  # kolor biały, możesz zmienić
-        self.model = pywavefront.Wavefront(
-            'C:/Users/Gosia/projekt_obiektowka_gosia_ola/pokoj_opengl/pokoj_opengl/models/koldra.obj',
-            collect_faces=True,
-            create_materials=True
-        )
-        self.compute_bounds()
+    @property
+    def pos(self):
+        # lekko ponad łóżkiem
+        return self.parent.pos + np.array([0.0, 0.1, 0.0])
+
+    @property
+    def rotation(self):
+        return self.parent.rotation
+
+    def draw(self):
+        glPushMatrix()
+        glTranslatef(*self.pos)
+        glRotatef(self.rotation, 0, 1, 0)
+        self.draw_geometry()
+        glPopMatrix()
 
     def draw_geometry(self):
         glPushMatrix()
-        glTranslatef(0, 0.1, 0)  # przesunięcie lokalne o 0.1 w górę
         glDisable(GL_LIGHTING)
         glColor3f(*self.color)
-
         for mesh in self.model.mesh_list:
             glBegin(GL_TRIANGLES)
             for face in mesh.faces:
@@ -197,6 +204,7 @@ class Koldra(Lozko):
                     glVertex3f(*self.model.vertices[vertex_i])
             glEnd()
         glPopMatrix()
+
 
 
 class Komoda(Szafa):
@@ -205,27 +213,24 @@ class Komoda(Szafa):
         self.name = "komoda"
         self.color = (0.2, 0.4, 0.8)
         self.model = pywavefront.Wavefront(
-            'C:/Users/Gosia/projekt_obiektowka_gosia_ola/pokoj_opengl/pokoj_opengl/models/SideTable.obj',
+            'C:/Users/aleks/vs/pokoj_opengl/pokoj_opengl/models/SideTable.obj',
             collect_faces=True,
             create_materials=True
         )
         self.compute_bounds()
-
-        # Dodaj TV przy tworzeniu komody
         self.attached_tv = TV(self)
+
 
 class TV(Szafa):
     def __init__(self, parent):
         self.parent = parent
         self.name = "tv"
         self.color = (0.0, 0.0, 0.0)
-        self.size = 1.0  # lub odpowiedni rozmiar, np. 0.6, jeśli chcesz mniejszy TV
-
-        self.rotation = 0
+        self.size = 1.0
         self.is_selected = False
 
         self.model = pywavefront.Wavefront(
-            'C:/Users/Gosia/projekt_obiektowka_gosia_ola/pokoj_opengl/pokoj_opengl/models/FlatScreenTelevision.obj',
+            'C:/Users/aleks/vs/pokoj_opengl/pokoj_opengl/models/FlatScreenTelevision.obj',
             collect_faces=True,
             create_materials=True
         )
@@ -233,8 +238,26 @@ class TV(Szafa):
 
     @property
     def pos(self):
-        # ustaw TV lekko ponad komodą
         return self.parent.pos + np.array([0.0, 0.7, 0.0])
+
+    def draw(self):
+        glPushMatrix()
+        glTranslatef(*self.pos)
+        glRotatef(self.parent.rotation, 0, 1, 0)
+        self.draw_geometry()
+
+        if self.is_selected:
+            glPushAttrib(GL_ENABLE_BIT)
+            glDisable(GL_LIGHTING)
+            glColor3f(1.0, 0.0, 0.0)
+            glLineWidth(2.0)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+            glScalef(*(self.size_vec * 1.01))
+            glutWireCube(1.0)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+            glPopAttrib()
+
+        glPopMatrix()
 
     def draw_geometry(self):
         glPushMatrix()
@@ -247,6 +270,3 @@ class TV(Szafa):
                     glVertex3f(*self.model.vertices[vertex_i])
             glEnd()
         glPopMatrix()
-
-
-    

@@ -27,11 +27,11 @@ def launch_gui(obiekty_ref, get_selected, set_selected, set_wall_color):
                     glutPostRedisplay()
 
         elif obj_type == "lozko":
-            from furniture import Lozko, Koldra
+            from furniture import Lozko
             lozko = Lozko([0.0, -0.95, 0.0])
-            koldra = Koldra([0.0, -0.95, 0.0])
             obiekty_ref.append(lozko)
-            obiekty_ref.append(koldra)
+            obiekty_ref.append(lozko.attached_koldra)
+
         elif obj_type == "szafa":
             from furniture import Szafa
             obj = Szafa([0.0, -0.95, 0.0])

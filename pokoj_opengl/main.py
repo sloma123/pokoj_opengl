@@ -23,14 +23,15 @@ sensitivity = 0.2
 wall_color = [0.8, 0.8, 0.9]
 
 komoda = Komoda([2.6, -0.95, 1.0])
+lozko = Lozko([2.5, -0.95, -2.5])
 obiekty = [
-    Lozko([2.5, -0.95, -2.5]),
-    Koldra([2.5, -0.85, -2.5]),
+    lozko,
+    lozko.attached_koldra,  # <- teraz kołdra zależna od łóżka
     Szafa([-2.5, -0.95, 2.2]),
     Regal([-3.5, -0.95, -3.5]),
     Stol([-0.55, -0.5, -2.9]),
     komoda,
-    komoda.attached_tv  # dodany TV
+    komoda.attached_tv
 ]
 
 
@@ -77,6 +78,8 @@ def draw_room():
 def draw_furniture():
     for obj in obiekty:
         obj.is_selected = (obj == selected_obj)
+        if hasattr(obj, "attached_koldra"):
+            obj.attached_koldra.is_selected = (obj == selected_obj)
         obj.draw()
 
 def display():
@@ -131,7 +134,10 @@ def mouse_click(button, state, x, y):
             hit_obj = None
             for obj in obiekty:
                 if obj.contains_ray(ray_origin, ray_dir):
-                    hit_obj = obj
+                    if obj.name == "koldra" and hasattr(obj, "parent"):
+                        hit_obj = obj.parent
+                    else:
+                        hit_obj = obj
                     break
             if hit_obj is not None:
                 selected_obj = None if selected_obj == hit_obj else hit_obj
@@ -141,42 +147,54 @@ def mouse_click(button, state, x, y):
         elif state == GLUT_UP:
             dragging = False
 
+
 def mouse_drag(x, y):
-    global selected_obj, dragging
-    if selected_obj is not None and dragging:
-        ray_origin, ray_dir = get_ray_from_mouse(x, y)
-        t = (selected_obj.pos[1] - ray_origin[1]) / ray_dir[1]
-        point_on_plane = ray_origin + t * ray_dir
+    global dragging, selected_obj
 
-        # Domyślny margines
-        margin = 0.0
-        if selected_obj.name == "lozko":
-            margin = 1.0  # dodatkowy bufor dla łóżka
-        elif selected_obj.name == "stol":
-            margin = 0.4
-        elif selected_obj.name == "szafa": 
-            margin = 0.5
+    if selected_obj is None or not dragging:
+        return
 
-        half_size = selected_obj.size / 2
-        new_x = np.clip(point_on_plane[0], -4 + half_size + margin, 4 - half_size - margin)
-        new_z = np.clip(point_on_plane[2], -4 + half_size + margin, 4 - half_size - margin)
+    ray_origin, ray_dir = get_ray_from_mouse(x, y)
+    if abs(ray_dir[1]) < 1e-6:
+        return
 
-        original_pos = selected_obj.pos.copy()
-        selected_obj.pos[0], selected_obj.pos[2] = new_x, new_z
+    t = (selected_obj.pos[1] - ray_origin[1]) / ray_dir[1]
+    point_on_plane = ray_origin + t * ray_dir
 
-        for obj in obiekty:
-            if obj is not selected_obj and check_collision(selected_obj, obj):
-                selected_obj.pos = original_pos  # cofnij pozycję przy kolizji
-                return
+    margin = 0.0
+    if selected_obj.name == "lozko":
+        margin = 1.0
+    elif selected_obj.name == "stol":
+        margin = 0.4
+    elif selected_obj.name == "szafa":
+        margin = 0.5
+
+    half_size = selected_obj.size / 2
+    new_x = np.clip(point_on_plane[0], -4 + half_size + margin, 4 - half_size - margin)
+    new_z = np.clip(point_on_plane[2], -4 + half_size + margin, 4 - half_size - margin)
+
+    original_pos = selected_obj.pos.copy()
+    selected_obj.pos[0] = new_x
+    selected_obj.pos[2] = new_z
+
+    for obj in obiekty:
+        if obj is not selected_obj and check_collision(selected_obj, obj):
+            selected_obj.pos = original_pos
+            return
+
+
 
 
 def special_input(key, x, y):
     global selected_obj
     if selected_obj:
+        if selected_obj.name == "tv":
+            return  # Ignoruj obrót TV, bo nie powinien być rotowany
         if key == GLUT_KEY_LEFT:
             selected_obj.rotation = (selected_obj.rotation - 10) % 360
         elif key == GLUT_KEY_RIGHT:
             selected_obj.rotation = (selected_obj.rotation + 10) % 360
+
 
 def timer(v):
     update_camera()
