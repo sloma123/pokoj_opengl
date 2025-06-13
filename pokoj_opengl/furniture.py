@@ -101,7 +101,6 @@ class Stol(Furniture):
             glEnd()
         glPopMatrix()
 
-
 class Regal(Furniture):
     def __init__(self, pos):
         super().__init__("regal", pos, 1.0, (0.7, 0.5, 0.3))
