@@ -16,7 +16,7 @@ def launch_gui(obiekty_ref, get_selected, set_selected, set_wall_color):
             obj = Komoda([0.0, -0.95, 0.0])
             obiekty_ref.append(obj)
         elif obj_type == "stol":
-            obj = Stol([0.0, -0.95, 0.0])
+            obj = Stol([0.0, -0.5 , 0.0])
             obiekty_ref.append(obj)
         elif obj_type == "tv":
             selected = get_selected()

@@ -1,5 +1,6 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
+from OpenGL.GLU import *  # ← TO DODAJ
 import numpy as np
 import pywavefront
 
@@ -28,6 +29,7 @@ class Furniture:
         glTranslatef(*self.pos)
         glRotatef(self.rotation, 0, 1, 0)
         self.draw_geometry()
+
         if self.is_selected:
             glPushAttrib(GL_ENABLE_BIT)
             glDisable(GL_LIGHTING)
@@ -54,8 +56,11 @@ class Furniture:
     def draw_geometry(self):
         glPushMatrix()
         glScalef(self.size, self.size, self.size)
-        glDisable(GL_LIGHTING)
-        glColor3f(*self.color)
+        glEnable(GL_LIGHTING)
+        bright_color = [min(c * 1.5, 1.0) for c in (*self.color, 1.0)]
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, bright_color)
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, [0.1, 0.1, 0.1, 1.0])
+        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 8.0)
         glutSolidCube(1)
         glPopMatrix()
 
@@ -78,6 +83,14 @@ class Furniture:
         return True
 
 
+# Pomocnicza funkcja do ustawiania materiału
+def apply_material(color):
+    bright_color = [min(c * 1.5, 1.0) for c in (*color, 1.0)]
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, bright_color)
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, [0.1, 0.1, 0.1, 1.0])
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 8.0)
+
+
 class Stol(Furniture):
     def __init__(self, pos):
         super().__init__("stol", pos, 1.0, (0.4, 0.2, 0.1))
@@ -91,8 +104,8 @@ class Stol(Furniture):
     def draw_geometry(self):
         glPushMatrix()
         glTranslatef(*(-self.center_offset))
-        glDisable(GL_LIGHTING)
-        glColor3f(*self.color)
+        glEnable(GL_LIGHTING)
+        apply_material(self.color)
         for mesh in self.model.mesh_list:
             glBegin(GL_TRIANGLES)
             for face in mesh.faces:
@@ -100,6 +113,7 @@ class Stol(Furniture):
                     glVertex3f(*self.model.vertices[vertex_i])
             glEnd()
         glPopMatrix()
+
 
 class Regal(Furniture):
     def __init__(self, pos):
@@ -113,8 +127,8 @@ class Regal(Furniture):
 
     def draw_geometry(self):
         glPushMatrix()
-        glDisable(GL_LIGHTING)
-        glColor3f(*self.color)
+        glEnable(GL_LIGHTING)
+        apply_material(self.color)
         for mesh in self.model.mesh_list:
             glBegin(GL_TRIANGLES)
             for face in mesh.faces:
@@ -136,8 +150,8 @@ class Szafa(Furniture):
 
     def draw_geometry(self):
         glPushMatrix()
-        glDisable(GL_LIGHTING)
-        glColor3f(*self.color)
+        glEnable(GL_LIGHTING)
+        apply_material(self.color)
         for mesh in self.model.mesh_list:
             glBegin(GL_TRIANGLES)
             for face in mesh.faces:
@@ -158,7 +172,6 @@ class Lozko(Szafa):
         )
         self.compute_bounds()
         self.attached_koldra = Koldra(self)
-        
 
 
 class Koldra(Szafa):
@@ -178,7 +191,6 @@ class Koldra(Szafa):
 
     @property
     def pos(self):
-        # lekko ponad łóżkiem
         return self.parent.pos + np.array([0.0, 0.1, 0.0])
 
     @property
@@ -194,8 +206,8 @@ class Koldra(Szafa):
 
     def draw_geometry(self):
         glPushMatrix()
-        glDisable(GL_LIGHTING)
-        glColor3f(*self.color)
+        glEnable(GL_LIGHTING)
+        apply_material(self.color)
         for mesh in self.model.mesh_list:
             glBegin(GL_TRIANGLES)
             for face in mesh.faces:
@@ -203,7 +215,6 @@ class Koldra(Szafa):
                     glVertex3f(*self.model.vertices[vertex_i])
             glEnd()
         glPopMatrix()
-
 
 
 class Komoda(Szafa):
@@ -260,12 +271,65 @@ class TV(Szafa):
 
     def draw_geometry(self):
         glPushMatrix()
-        glDisable(GL_LIGHTING)
-        glColor3f(*self.color)
+        glEnable(GL_LIGHTING)
+        apply_material(self.color)
         for mesh in self.model.mesh_list:
             glBegin(GL_TRIANGLES)
             for face in mesh.faces:
                 for vertex_i in face:
                     glVertex3f(*self.model.vertices[vertex_i])
             glEnd()
+        glPopMatrix()
+
+
+class LampkaStojaca(Furniture):
+    def __init__(self, pos):
+        super().__init__("lampka", pos, 1.0, (0.9, 0.9, 0.6))
+        self.bounds_min = np.array([-0.15, 0.0, -0.15])
+        self.bounds_max = np.array([0.15, 1.9, 0.15])
+        self.center_offset = np.array([0.0, 0.9, 0.0])
+        self.is_on = True
+
+    def draw_geometry(self):
+        glPushMatrix()
+        glEnable(GL_LIGHTING)
+
+        # Podstawa
+        glPushMatrix()
+        glColor3f(0.2, 0.2, 0.2)
+        glTranslatef(0.0, 0.05, 0.0)
+        glScalef(0.3, 0.1, 0.3)
+        glutSolidCube(1.0)
+        glPopMatrix()
+
+        # Trzon
+        glPushMatrix()
+        glColor3f(0.4, 0.4, 0.4)
+        glTranslatef(0.0, 0.55, 0.0)
+        glRotatef(-90, 1, 0, 0)
+        quad = gluNewQuadric()
+        gluCylinder(quad, 0.05, 0.05, 1.0, 16, 16)
+        glPopMatrix()
+
+        # Klosz
+        glPushMatrix()
+        glTranslatef(0.0, 1.6, 0.0)
+        glRotatef(-90, 1, 0, 0)
+        glColor3f(1.0, 1.0, 0.8)
+        quad = gluNewQuadric()
+        gluCylinder(quad, 0.25, 0.0, 0.3, 20, 20)
+        glPopMatrix()
+
+        # Żarówka
+        glPushMatrix()
+        glTranslatef(0.0, 1.55, 0.0)
+        if self.is_on:
+            glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [1.0, 0.9, 0.6, 1.0])
+        else:
+            glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [0.0, 0.0, 0.0, 1.0])
+        glColor3f(1.0, 0.9, 0.6)
+        glutSolidSphere(0.05, 16, 16)
+        glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [0.0, 0.0, 0.0, 1.0])
+        glPopMatrix()
+
         glPopMatrix()
